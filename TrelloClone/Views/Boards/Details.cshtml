@@ -1,0 +1,980 @@
+﻿@model TrelloClone.Models.Board
+@{
+    ViewData["Title"] = Model.Title;
+    Layout = "_BoardLayout"; // Özel bir layout kullanacağız
+}
+
+<div class="board-container"
+     style="background-color: @Model.BackgroundColor; background-image: url('@Model.BackgroundImage');">
+
+    <div class="board-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="board-title">@Model.Title</h1>
+
+            <div class="board-actions">
+                <div class="btn-group">
+                    <button type="button" class="btn btn-outline-light btn-sm">
+                        <i class="bi bi-star"></i> Favorilere Ekle
+                    </button>
+                    <button type="button" class="btn btn-outline-light btn-sm" data-bs-toggle="modal" data-bs-target="#boardMembersModal">
+                        <i class="bi bi-people"></i> Üyeler
+                    </button>
+                    <button type="button" class="btn btn-outline-light btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-three-dots"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="@Url.Action("Edit", "Boards", new { id = Model.Id })"><i class="bi bi-pencil me-2"></i>Panoyu Düzenle</a></li>
+                        <li><a class="dropdown-item" href="#" id="changeBackgroundBtn"><i class="bi bi-palette me-2"></i>Arka Planı Değiştir</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item text-danger" href="#" data-bs-toggle="modal" data-bs-target="#deleteBoardModal">
+                                <i class="bi bi-trash me-2"></i>Panoyu Sil
+                            </a>
+                        </li>
+                        <li>
+                            <a asp-controller="Sprints" asp-action="Index" asp-route-id="@Model.Id" class="btn btn-outline-light btn-sm">
+                                <i class="bi bi-clock-history"></i> Sprintler
+                            </a>
+                        </li>
+
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrEmpty(Model.Description))
+        {
+            <p class="board-description mt-2">@Model.Description</p>
+        }
+    </div>
+
+    <div class="board-lists-container">
+        @foreach (var list in Model.Lists)
+        {
+            <div class="board-list" data-list-id="@list.Id">
+                <div class="board-list-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">@list.Title</h5>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-link text-dark" type="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-three-dots"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item edit-list-btn" href="#" data-list-id="@list.Id"><i class="bi bi-pencil me-2"></i>Listeyi Düzenle</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger delete-list-btn" href="#" data-list-id="@list.Id"><i class="bi bi-trash me-2"></i>Listeyi Sil</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="board-list-cards">
+                    @foreach (var card in list.Cards)
+                    {
+                        <div class="card board-card mb-2 p-2" data-card-id="@card.Id">
+                            @if (!string.IsNullOrEmpty(card.CoverColor) || !string.IsNullOrEmpty(card.CoverImage))
+                            {
+                                <div class="card-cover mb-2" style="background-color: @card.CoverColor; background-image: url('@card.CoverImage');"></div>
+                            }
+                            <div class="card-title">@card.Title</div>
+
+                            <div class="card-badges d-flex flex-wrap mt-2">
+                                @if (card.DueDate.HasValue)
+                                {
+                                    <span class="badge bg-warning text-dark me-1">
+                                        <i class="bi bi-clock"></i> @card.DueDate.Value.ToString("dd.MM.yyyy")
+                                    </span>
+                                }
+
+                                @if (card.Comments != null && card.Comments.Any())
+                                {
+                                    <span class="badge bg-light text-dark me-1">
+                                        <i class="bi bi-chat"></i> @card.Comments.Count
+                                    </span>
+                                }
+
+                                @if (card.Attachments != null && card.Attachments.Any())
+                                {
+                                    <span class="badge bg-light text-dark me-1">
+                                        <i class="bi bi-paperclip"></i> @card.Attachments.Count
+                                    </span>
+                                }
+
+                                @if (card.Checklists != null && card.Checklists.Any())
+                                {
+                                    var totalItems = card.Checklists.SelectMany(cl => cl.Items).Count();
+                                    var completedItems = card.Checklists.SelectMany(cl => cl.Items).Count(i => i.IsCompleted);
+
+                                    <span class="badge bg-light text-dark me-1">
+                                        <i class="bi bi-check2-square"></i> @completedItems/@totalItems
+                                    </span>
+                                }
+                            </div>
+
+                            @if (card.Members != null && card.Members.Any())
+                            {
+                                <div class="card-members mt-2">
+                                    @foreach (var member in card.Members.Take(3))
+                                    {
+                                        if (!string.IsNullOrEmpty(member.User.ProfilePicture))
+                                        {
+                                            <img src="@member.User.ProfilePicture" class="rounded-circle card-member-avatar" alt="@member.User.FirstName">
+                                        }
+                                        else
+                                        {
+                                            <div class="card-member-avatar rounded-circle bg-secondary text-white">
+                                                @member.User.FirstName.Substring(0, 1)@member.User.LastName.Substring(0, 1)
+                                            </div>
+                                        }
+                                    }
+
+                                    @if (card.Members.Count > 3)
+                                    {
+                                        <div class="card-member-avatar rounded-circle bg-light text-dark">
+                                            +@(card.Members.Count - 3)
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+                <div class="board-list-footer p-2">
+                    <a href="#" class="add-card-placeholder d-block text-decoration-none" data-list-id="@list.Id">
+                        <i class="bi bi-plus"></i> Kart Ekle
+                    </a>
+                </div>
+            </div>
+        }
+
+        <!-- Yeni liste formu -->
+        <div class="add-list-form">
+            <div class="card board-list">
+                <div class="card-body">
+                    <h5 class="mb-3">Liste Ekle</h5>
+                    <form id="addListForm">
+                        <div class="mb-3">
+                            <input type="text" class="form-control" id="listTitle" placeholder="Liste başlığı girin" required>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">Ekle</button>
+                            <button type="button" class="btn btn-outline-secondary" id="cancelAddList">İptal</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Üyeler Modal -->
+<div class="modal fade" id="boardMembersModal" tabindex="-1" aria-labelledby="boardMembersModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="boardMembersModalLabel">Pano Üyeleri</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="memberEmail" class="form-label">Üye Ekle</label>
+                    <div class="input-group">
+                        <input type="email" class="form-control" id="memberEmail" placeholder="E-posta adresi girin">
+                        <button class="btn btn-primary" type="button" id="addMemberBtn">Ekle</button>
+                    </div>
+                </div>
+
+                <hr>
+
+                <h6 class="mb-3">Pano Sahibi</h6>
+                <div class="d-flex align-items-center mb-3">
+                    @if (!string.IsNullOrEmpty(Model.User.ProfilePicture))
+                    {
+                        <img src="@Model.User.ProfilePicture" class="rounded-circle me-2" width="32" height="32" alt="@Model.User.FirstName">
+                    }
+                    else
+                    {
+                        <div class="rounded-circle bg-primary text-white me-2" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
+                            @Model.User.FirstName.Substring(0, 1)@Model.User.LastName.Substring(0, 1)
+                        </div>
+                    }
+                    <div>
+                        <div>@Model.User.FirstName @Model.User.LastName</div>
+                        <div class="text-muted small">@Model.User.Email</div>
+                    </div>
+                </div>
+
+                <div id="boardMembersContainer">
+                    @if (Model.Members != null && Model.Members.Any())
+                    {
+                        <h6 class="mb-3 mt-4">Üyeler</h6>
+
+                        @foreach (var member in Model.Members)
+                        {
+                            <div class="d-flex align-items-center justify-content-between mb-2 member-item" data-member-id="@member.Id" data-user-id="@member.UserId">
+                                <div class="d-flex align-items-center">
+                                    @if (!string.IsNullOrEmpty(member.User.ProfilePicture))
+                                    {
+                                        <img src="@member.User.ProfilePicture" class="rounded-circle me-2" width="32" height="32" alt="@member.User.FirstName">
+                                    }
+                                    else
+                                    {
+                                        <div class="rounded-circle bg-secondary text-white me-2" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
+                                            @member.User.FirstName.Substring(0, 1)@member.User.LastName.Substring(0, 1)
+                                        </div>
+                                    }
+                                    <div>
+                                        <div>@member.User.FirstName @member.User.LastName</div>
+                                        <div class="text-muted small">@member.User.Email</div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <button class="btn btn-sm btn-outline-danger remove-member-btn" data-user-id="@member.UserId">Kaldır</button>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="alert alert-info mt-3">
+                            <i class="bi bi-info-circle me-2"></i>
+                            Henüz pano üyesi bulunmamaktadır.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Liste Düzenleme Modal -->
+<div class="modal fade" id="editListModal" tabindex="-1" aria-labelledby="editListModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editListModalLabel">Listeyi Düzenle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editListForm">
+                    <input type="hidden" id="editListId">
+                    <div class="mb-3">
+                        <label for="editListTitle" class="form-label">Liste Başlığı</label>
+                        <input type="text" class="form-control" id="editListTitle" required>
+                    </div>
+                    <div class="d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                        <button type="submit" class="btn btn-primary">Kaydet</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Liste Silme Onay Modal -->
+<div class="modal fade" id="deleteListModal" tabindex="-1" aria-labelledby="deleteListModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteListModalLabel">Listeyi Sil</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+            </div>
+            <div class="modal-body">
+                <p>Bu listeyi ve içindeki tüm kartları silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.</p>
+                <input type="hidden" id="deleteListId">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteList">Listeyi Sil</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pano Silme Onay Modal -->
+<div class="modal fade" id="deleteBoardModal" tabindex="-1" aria-labelledby="deleteBoardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteBoardModalLabel">Panoyu Sil</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+            </div>
+            <div class="modal-body">
+                <p>Bu panoyu ve içindeki tüm verileri silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                <form asp-action="Delete" asp-controller="Boards" asp-route-id="@Model.Id" method="post">
+                    <button type="submit" class="btn btn-danger">Panoyu Sil</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Arka Plan Değiştirme Modal -->
+<div class="modal fade" id="changeBackgroundModal" tabindex="-1" aria-labelledby="changeBackgroundModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="changeBackgroundModalLabel">Pano Arka Planını Değiştir</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+            </div>
+            <div class="modal-body">
+                <form id="changeBackgroundForm">
+                    <div class="mb-3">
+                        <label for="backgroundColor" class="form-label">Arka Plan Rengi</label>
+                        <div class="color-options d-flex flex-wrap gap-2 mb-2">
+                            <div class="color-option" style="background-color: #0079BF;" data-color="#0079BF"></div>
+                            <div class="color-option" style="background-color: #D29034;" data-color="#D29034"></div>
+                            <div class="color-option" style="background-color: #519839;" data-color="#519839"></div>
+                            <div class="color-option" style="background-color: #B04632;" data-color="#B04632"></div>
+                            <div class="color-option" style="background-color: #89609E;" data-color="#89609E"></div>
+                            <div class="color-option" style="background-color: #CD5A91;" data-color="#CD5A91"></div>
+                            <div class="color-option" style="background-color: #4BBF6B;" data-color="#4BBF6B"></div>
+                            <div class="color-option" style="background-color: #00AECC;" data-color="#00AECC"></div>
+                        </div>
+                        <input type="hidden" id="backgroundColor" value="@Model.BackgroundColor">
+                    </div>
+                    <div class="d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                        <button type="submit" class="btn btn-primary">Kaydet</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Kart Detay Modal -->
+<div class="modal fade" id="cardDetailModal" tabindex="-1" aria-labelledby="cardDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div id="cardDetailContent">
+                <!-- Kart detayları AJAX ile buraya yüklenecek -->
+                <div class="text-center p-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Yükleniyor...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            // Sürükle-bırak fonksiyonu
+            function initSortable() {
+                // Kartların sıralanması
+                $(".board-list-cards").sortable({
+                    connectWith: ".board-list-cards",
+                    placeholder: "card-placeholder",
+                    start: function(e, ui) {
+                        ui.placeholder.height(ui.item.height());
+                    },
+                    update: function(e, ui) {
+                        // Sadece hedef listede tetikle (iki kere tetiklenmesini önler)
+                        if (this === ui.item.parent()[0]) {
+                            var cardId = ui.item.data('card-id');
+                            var targetListId = $(this).closest('.board-list').data('list-id');
+                            var newPosition = ui.item.index();
+                            
+                            // Kart pozisyonunu güncelle
+                            $.ajax({
+                                url: '@Url.Action("MoveCard", "Cards")',
+                                type: 'POST',
+                                contentType: 'application/json',
+                                data: JSON.stringify({
+                                    cardId: cardId,
+                                    targetListId: targetListId,
+                                    newPosition: newPosition
+                                }),
+                                error: function (error) {
+                                    alert('Kart taşınırken bir hata oluştu: ' + error.responseText);
+                                    // Hata durumunda sıralamayı eski haline getir
+                                    $(".board-list-cards").sortable('cancel');
+                                }
+                            });
+                        }
+                    }
+                }).disableSelection();
+                
+                // Listelerin sıralanması
+                $(".board-lists-container").sortable({
+                    items: ".board-list",
+                    handle: ".board-list-header",
+                    placeholder: "list-placeholder",
+                    start: function(e, ui) {
+                        ui.placeholder.height(ui.item.height());
+                        ui.placeholder.width(ui.item.width());
+                    },
+                    update: function(e, ui) {
+                        var listId = ui.item.data('list-id');
+                        var newPosition = ui.item.index();
+                        var boardId = @Model.Id;
+                        
+                        // Liste pozisyonunu güncelle
+                        $.ajax({
+                            url: '@Url.Action("UpdateListPosition", "Boards")',
+                            type: 'POST',
+                            contentType: 'application/json',
+                            data: JSON.stringify({
+                                boardId: boardId,
+                                listId: listId,
+                                newPosition: newPosition
+                            }),
+                            error: function (error) {
+                                alert('Liste taşınırken bir hata oluştu: ' + error.responseText);
+                                // Hata durumunda sıralamayı eski haline getir
+                                $(".board-lists-container").sortable('cancel');
+                            }
+                        });
+                    }
+                }).disableSelection();
+            }
+            
+            // Sürükle-bırak özelliğini aktif et
+            initSortable();
+            
+            // Yeni liste ekleme
+            $('#addListForm').submit(function (e) {
+                e.preventDefault();
+                
+                var title = $('#listTitle').val();
+                var boardId = @Model.Id;
+                
+                if (title) {
+                    $.ajax({
+                        url: '@Url.Action("AddList", "Boards")',
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({
+                            boardId: boardId,
+                            title: title
+                        }),
+                        success: function (result) {
+                            // Yeni liste HTML'ini oluştur
+                            var newList = `
+                                <div class="board-list" data-list-id="${result.id}">
+                                    <div class="board-list-header">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <h5 class="mb-0">${result.title}</h5>
+                                            <div class="dropdown">
+                                                <button class="btn btn-sm btn-link text-dark" type="button" data-bs-toggle="dropdown">
+                                                    <i class="bi bi-three-dots"></i>
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end">
+                                                    <li><a class="dropdown-item edit-list-btn" href="#" data-list-id="${result.id}"><i class="bi bi-pencil me-2"></i>Listeyi Düzenle</a></li>
+                                                    <li><hr class="dropdown-divider"></li>
+                                                    <li><a class="dropdown-item text-danger delete-list-btn" href="#" data-list-id="${result.id}"><i class="bi bi-trash me-2"></i>Listeyi Sil</a></li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="board-list-cards"></div>
+                                    <div class="board-list-footer p-2">
+                                        <a href="#" class="add-card-placeholder d-block text-decoration-none" data-list-id="${result.id}">
+                                            <i class="bi bi-plus"></i> Kart Ekle
+                                        </a>
+                                    </div>
+                                </div>
+                            `;
+                            
+                            // Yeni listeyi ekle
+                            $('.add-list-form').before(newList);
+                            
+                            // Formu temizle
+                            $('#listTitle').val('');
+                            
+                            // Sürükle-bırak için yeni listeyi hazırla
+                            initSortable();
+                        },
+                        error: function (error) {
+                            alert('Liste eklenirken bir hata oluştu: ' + error.responseText);
+                        }
+                    });
+                }
+            });
+            
+            // İptal butonunu işle
+            $('#cancelAddList').click(function() {
+                $('#listTitle').val('');
+            });
+            
+            // Liste düzenleme butonunu işle
+            $(document).on('click', '.edit-list-btn', function(e) {
+                e.preventDefault();
+                
+                var listId = $(this).data('list-id');
+                var listTitle = $(this).closest('.board-list').find('.board-list-header h5').text().trim();
+                
+                $('#editListId').val(listId);
+                $('#editListTitle').val(listTitle);
+                
+                $('#editListModal').modal('show');
+            });
+            
+            // Liste düzenleme formunu işle
+            $('#editListForm').submit(function(e) {
+                e.preventDefault();
+                
+                var listId = $('#editListId').val();
+                var title = $('#editListTitle').val();
+                
+                if (listId && title) {
+                    $.ajax({
+                        url: '@Url.Action("UpdateList", "Boards")',
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({
+                            listId: listId,
+                            title: title
+                        }),
+                        success: function (result) {
+                            // Başlığı güncelle
+                            $(`.board-list[data-list-id="${listId}"] .board-list-header h5`).text(result.title);
+                            
+                            // Modal'ı kapat
+                            $('#editListModal').modal('hide');
+                        },
+                        error: function (error) {
+                            alert('Liste güncellenirken bir hata oluştu: ' + error.responseText);
+                        }
+                    });
+                }
+            });
+            
+            // Liste silme butonunu işle
+            $(document).on('click', '.delete-list-btn', function(e) {
+                e.preventDefault();
+                
+                var listId = $(this).data('list-id');
+                $('#deleteListId').val(listId);
+                
+                $('#deleteListModal').modal('show');
+            });
+            
+            // Liste silme onay butonunu işle
+            $('#confirmDeleteList').click(function() {
+                var listId = $('#deleteListId').val();
+                
+                if (listId) {
+                    $.ajax({
+                        url: '@Url.Action("DeleteList", "Boards")',
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({
+                            listId: listId
+                        }),
+                        success: function () {
+                            // Listeyi kaldır
+                            $(`.board-list[data-list-id="${listId}"]`).remove();
+                            
+                            // Modal'ı kapat
+                            $('#deleteListModal').modal('hide');
+                        },
+                        error: function (error) {
+                            alert('Liste silinirken bir hata oluştu: ' + error.responseText);
+                        }
+                    });
+                }
+            });
+            
+            // Kart ekleme form butonları
+            $(document).on('click', '.add-card-placeholder', function (e) {
+                e.preventDefault();
+                var listId = $(this).data('list-id');
+                
+                var addCardForm = `
+                    <div class="add-card-form p-2">
+                        <div class="card mb-2">
+                            <div class="card-body p-2">
+                                <textarea class="form-control card-title-input" placeholder="Bu kart için başlık girin..." rows="2"></textarea>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-primary btn-sm add-card-btn" data-list-id="${listId}">Kart Ekle</button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm cancel-add-card-btn">İptal</button>
+                        </div>
+                    </div>
+                `;
+                
+                // Kart ekleme formunu göster
+                $(this).hide();
+                $(this).parent().append(addCardForm);
+                $(this).parent().find('.card-title-input').focus();
+            });
+            
+            // Kart ekleme iptal
+            $(document).on('click', '.cancel-add-card-btn', function () {
+                var footer = $(this).closest('.board-list-footer');
+                footer.find('.add-card-form').remove();
+                footer.find('.add-card-placeholder').show();
+            });
+            
+            // Kart ekleme
+            $(document).on('click', '.add-card-btn', function () {
+                var listId = $(this).data('list-id');
+                var titleInput = $(this).closest('.add-card-form').find('.card-title-input');
+                var title = titleInput.val();
+                
+                if (title) {
+                    $.ajax({
+                        url: '@Url.Action("Create", "Cards")',
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({
+                            boardListId: listId,
+                            title: title,
+                            description: ''
+                        }),
+                        success: function (result) {
+                            // Yeni kart HTML'ini oluştur
+                            var newCard = `
+                                 <div class="card board-card mb-2 p-2" data-card-id="${result.id}">
+                                    <div class="card-title">${result.title}</div>
+                                </div>
+                            `;
+
+                            // Yeni kartı ekle
+                            var list = $(`.board-list[data-list-id="${listId}"]`);
+                            list.find('.board-list-cards').append(newCard);
+
+                            // Formu temizle ve gizle
+                            var footer = list.find('.board-list-footer');
+                            footer.find('.add-card-form').remove();
+                            footer.find('.add-card-placeholder').show();
+
+                            // Sürükle-bırak için yeni kartı hazırla
+                            initSortable();
+                        },
+                        error: function (error) {
+                            alert('Kart eklenirken bir hata oluştu: ' + error.responseText);
+                        }
+                    });
+                }
+            });
+
+            // Kart detaylarını aç
+                   // Kart detaylarını aç
+        $(document).on('click', '.board-card', function(e) {
+            // Kart ekleme butonuna veya formuna tıklanırsa işlemi geç
+            if ($(e.target).hasClass('add-card-placeholder') ||
+                $(e.target).closest('.add-card-form').length ||
+                $(e.target).closest('.cancel-add-card-btn').length ||
+                $(e.target).closest('.add-card-btn').length) {
+                return;
+            }
+
+            var cardId = $(this).data('card-id');
+            console.log("Tıklanan kart ID:", cardId);
+
+            // Modal'ı göster
+            $('#cardDetailModal').modal('show');
+
+            // AJAX ile kart detaylarını getir
+            $.ajax({
+                url: '/Cards/GetCardDetails/' + cardId,
+                type: 'GET',
+                success: function (result) {
+                    $('#cardDetailContent').html(result);
+                    console.log("Kart detayları yüklendi, şimdi olayları bağlıyoruz");
+                    // Olayları bağla, ancak biraz gecikmeyle yapılsın
+                    setTimeout(function() {
+                        initCardDetailEvents();
+                    }, 100);
+                },
+                error: function (error) {
+                    $('#cardDetailContent').html('<div class="p-5 text-center text-danger"><i class="bi bi-exclamation-triangle-fill fs-1 mb-3"></i><p>Kart detayları yüklenirken bir hata oluştu.</p></div>');
+                }
+            });
+        });
+
+        // Modal kapandığında temizlik yap
+        $(document).on('hidden.bs.modal', '#cardDetailModal', function () {
+            $('#cardDetailContent').html('');
+        });
+
+        // Modal tamamen açıldığında olayları tekrar bağla
+        $(document).on('shown.bs.modal', '#cardDetailModal', function () {
+            console.log("Modal tam olarak açıldı, olayları tekrar bağlıyoruz");
+            initCardDetailEvents();
+        });
+
+            // Kart detayları içindeki eventleri bağla
+                    // Kart detayları içindeki eventleri bağla
+               function initCardDetailEvents() {
+            console.log("initCardDetailEvents çalıştırıldı");
+
+            // Kart ID'sini alalım ve konsola yazdıralım
+            var cardId = $('.card-detail-modal').data('card-id');
+            console.log("Modal içindeki kart ID:", cardId);
+
+            // Kart başlığını güncelle
+            $('.update-card-title-btn').off('click').on('click', function() {
+                var title = $('#cardTitle').val();
+                if (title) {
+                    updateCard(cardId, { title: title });
+                }
+            });
+
+            // Açıklama bölümünü düzenle
+            $('.card-description-placeholder, .card-description-text').off('click').on('click', function() {
+                $(this).addClass('d-none');
+                $('.card-description-edit').removeClass('d-none');
+                $('#cardDescription').focus();
+            });
+
+            // Açıklama düzenlemeyi iptal et
+            $('.cancel-description-btn').off('click').on('click', function() {
+                $('.card-description-edit').addClass('d-none');
+
+                if ($('#cardDescription').val().trim()) {
+                    $('.card-description-text').removeClass('d-none');
+                } else {
+                    $('.card-description-placeholder').removeClass('d-none');
+                }
+            });
+
+            // Açıklamayı kaydet
+            $('.save-description-btn').off('click').on('click', function() {
+                var description = $('#cardDescription').val();
+                updateCard(cardId, { description: description });
+
+                $('.card-description-edit').addClass('d-none');
+
+                if (description.trim()) {
+                    $('.card-description-text p').text(description);
+                    $('.card-description-text').removeClass('d-none');
+                } else {
+                    $('.card-description-placeholder').removeClass('d-none');
+                }
+            });
+
+            // Son tarih kaydet
+            $('.save-due-date-btn').off('click').on('click', function() {
+                var dueDate = $('#dueDate').val();
+                updateCard(cardId, { dueDate: dueDate });
+            });
+
+            // Son tarih kaldır
+            $('.remove-due-date-btn').off('click').on('click', function() {
+                updateCard(cardId, { dueDate: null });
+            });
+        }
+
+            // Kart güncelleme yardımcı fonksiyonu
+                   // Board.cshtml içinde bulunan updateCard fonksiyonunu düzenleyin
+
+                        function updateCard(cardId, data) {
+            console.log("updateCard called with:", cardId, data);
+
+            // Kart ID'si doğrudan modaldan alınsın
+            if (!cardId) {
+                cardId = $('.card-detail-modal').data('card-id');
+                console.log("Card ID modaldan alındı:", cardId);
+            }
+
+            // Hala kart ID yoksa hata ver
+            if (!cardId) {
+                console.error("Kart ID'si bulunamadı!");
+                alert("Kart ID bulunamadı, lütfen sayfayı yenileyip tekrar deneyin.");
+                return;
+            }
+
+            // Mevcut değerleri al (yoksa boş string kullan)
+            var currentTitle = $('#cardTitle').val() || "";
+            var currentDescription = $('#cardDescription').val() || "";
+            var currentDueDate = $('#dueDate').val() || null;
+
+            // Güncelleme verilerini oluştur
+            var updateData = {
+                id: cardId,
+                title: data.title !== undefined ? data.title : currentTitle,
+                description: data.description !== undefined ? data.description : currentDescription,
+                coverColor: data.coverColor || "",
+                coverImage: data.coverImage || "",
+                dueDate: data.dueDate !== undefined ? data.dueDate : currentDueDate
+            };
+
+            console.log("Gönderilecek veriler:", updateData);
+
+            // AJAX isteği gönder
+            $.ajax({
+                url: '/Cards/Update',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(updateData),
+                success: function(result) {
+                    console.log("Güncelleme başarılı:", result);
+
+                    // Modalı kapat
+                    $('#cardDetailModal').modal('hide');
+
+                    // Sayfa yeniden yüklenir (veya gerekli alanları güncelle)
+                    location.reload();
+                },
+                error: function(xhr, status, error) {
+                    console.error("Güncelleme başarısız:", xhr.responseText);
+
+                    var errorMessage = "Kart güncellenirken bir hata oluştu";
+                    try {
+                        var errorObj = JSON.parse(xhr.responseText);
+                        errorMessage += ": " + (errorObj.message || JSON.stringify(errorObj));
+                    } catch (e) {
+                        errorMessage += ": " + xhr.responseText;
+                    }
+
+                    alert(errorMessage);
+                }
+            });
+        }
+
+            // Kontrol listesi ilerleme çubuğunu güncelleme
+            function updateChecklistProgress(checklistElement) {
+                var items = checklistElement.find('.toggle-item');
+                var completedItems = checklistElement.find('.toggle-item:checked').length;
+                var totalItems = items.length;
+                var progressPercentage = totalItems > 0 ? Math.round(completedItems * 100 / totalItems) : 0;
+
+                var progressBar = checklistElement.find('.progress-bar');
+                progressBar.css('width', progressPercentage + '%');
+                progressBar.attr('aria-valuenow', progressPercentage);
+                progressBar.text(progressPercentage + '%');
+            }
+
+            // Üye ekle butonu
+            $('#addMemberBtn').click(function() {
+                var email = $('#memberEmail').val();
+                var boardId = @Model.Id;
+
+                if (email) {
+                    $.ajax({
+                        url: '@Url.Action("AddMember", "Boards")',
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({
+                            boardId: boardId,
+                            email: email
+                        }),
+                        success: function(result) {
+                            // Yeni üye HTML'ini oluştur
+                            var memberHtml = `
+                                <div class="d-flex align-items-center justify-content-between mb-2 member-item" data-member-id="${result.id}" data-user-id="${result.userId}">
+                                    <div class="d-flex align-items-center">
+                                        ${result.userProfilePicture ?
+                                        `<img src="${result.userProfilePicture}" class="rounded-circle me-2" width="32" height="32" alt="${result.userName}">` :
+                                        `<div class="rounded-circle bg-secondary text-white me-2" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
+                                            ${result.userName.split(' ')[0].charAt(0)}${result.userName.split(' ')[1].charAt(0)}
+                                        </div>`}
+                                        <div>
+                                            <div>${result.userName}</div>
+                                            <div class="text-muted small">${result.userEmail}</div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <button class="btn btn-sm btn-outline-danger remove-member-btn" data-user-id="${result.userId}">Kaldır</button>
+                                    </div>
+                                </div>
+                            `;
+
+                            // Üye bölümünü görünür yap ve üye ekle
+                            if ($('#boardMembersContainer .member-item').length === 0) {
+                                $('#boardMembersContainer').html('<h6 class="mb-3 mt-4">Üyeler</h6>');
+                            }
+
+                            $('#boardMembersContainer').append(memberHtml);
+
+                            // Formu temizle
+                            $('#memberEmail').val('');
+                        },
+                        error: function(error) {
+                            if (error.status === 404) {
+                                alert('Kullanıcı bulunamadı.');
+                            } else if (error.status === 400) {
+                                alert('Bu kullanıcı zaten pano üyesi.');
+                            } else {
+                                alert('Üye eklenirken bir hata oluştu.');
+                            }
+                        }
+                    });
+                }
+            });
+
+            // Üye kaldır butonları
+            $(document).on('click', '.remove-member-btn', function() {
+                var userId = $(this).data('user-id');
+                var boardId = @Model.Id;
+                var memberItem = $(this).closest('.member-item');
+
+                $.ajax({
+                    url: '@Url.Action("RemoveMember", "Boards")',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        boardId: boardId,
+                        userId: userId
+                    }),
+                    success: function() {
+                        memberItem.remove();
+
+                        // Eğer son üye kaldırıldıysa bilgi mesajını göster
+                        if ($('#boardMembersContainer .member-item').length === 0) {
+                            $('#boardMembersContainer').html(`
+                                <div class="alert alert-info mt-3">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    Henüz pano üyesi bulunmamaktadır.
+                                </div>
+                            `);
+                        }
+                    }
+                });
+            });
+
+            // Arka plan değiştir
+            $('#changeBackgroundBtn').click(function() {
+                $('#changeBackgroundModal').modal('show');
+            });
+
+            // Renk seçeneklerini işle
+            $('.color-option').click(function() {
+                $('.color-option').removeClass('selected');
+                $(this).addClass('selected');
+                var color = $(this).data('color');
+                $('#backgroundColor').val(color);
+            });
+
+            // İlk yüklemede mevcut rengi seç
+            var currentColor = $('#backgroundColor').val();
+            $(`.color-option[data-color="${currentColor}"]`).addClass('selected');
+
+            // Arka plan formunu işle
+            $('#changeBackgroundForm').submit(function(e) {
+                e.preventDefault();
+
+                var boardId = @Model.Id;
+                var backgroundColor = $('#backgroundColor').val();
+
+                $.ajax({
+                    url: '@Url.Action("Edit", "Boards", new { id = Model.Id })',
+                    type: 'POST',
+                    data: {
+                        Id: boardId,
+                        Title: '@Model.Title',
+                        Description: '@(Model.Description ?? "")',
+                        BackgroundColor: backgroundColor,
+                        BackgroundImage: '@(Model.BackgroundImage ?? "")',
+                        IsPublic: @(Model.IsPublic.ToString().ToLower())
+                    },
+                    success: function() {
+                        location.reload();
+                    }
+                });
+            });
+        });
+    </script>
+}

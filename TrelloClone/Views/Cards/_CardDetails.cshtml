@@ -1,0 +1,534 @@
+﻿@model TrelloClone.ViewModels.CardDetailsViewModel
+
+<div class="card-detail-modal" data-card-id="@Model.Card.Id">
+    <div class="modal-header">
+        <div class="d-flex align-items-center w-100">
+            <i class="bi bi-credit-card-2-front fs-5 me-2"></i>
+            <h5 class="modal-title mb-0" id="cardModalLabel">@Model.Card.Title</h5>
+
+            <!-- Sprint rozeti/butonu ekledim -->
+            @if (Model.Card.SprintId.HasValue && Model.Card.Sprint != null)
+            {
+                <span class="ms-2 badge bg-info d-flex align-items-center">
+                    <i class="bi bi-clock-history me-1"></i>
+                    <span>@Model.Card.Sprint.Name</span>
+                </span>
+            }
+            else
+            {
+                <button class="ms-2 btn btn-sm btn-outline-info d-flex align-items-center"
+                        data-bs-toggle="collapse" data-bs-target="#sprintCollapse">
+                    <i class="bi bi-clock-history me-1"></i>
+                    <span>Sprint</span>
+                </button>
+            }
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+    </div>
+
+    <div class="modal-body">
+        <div class="row">
+            <div class="col-md-9 card-detail-main">
+                <!-- Kart Başlığı -->
+                <div class="mb-4">
+                    <div class="card-detail-section mb-2">
+                        <h6 class="text-muted mb-2">
+                            <i class="bi bi-credit-card-2-front me-2"></i>
+                            Başlık
+                        </h6>
+                        <div class="d-flex align-items-center">
+                            <input type="text" id="cardTitle" class="form-control" value="@Model.Card.Title">
+                            <button class="btn btn-primary ms-2 update-card-title-btn">Güncelle</button>
+                        </div>
+                    </div>
+
+                    <div class="card-location small text-muted">
+                        <span>Listede: <strong>@Model.Card.BoardList.Title</strong></span>
+                    </div>
+                </div>
+
+                <!-- Kart Açıklaması -->
+                <div class="card-detail-section mb-3">
+                    <h6 class="text-muted mb-2">
+                        <i class="bi bi-text-left me-2"></i>
+                        Açıklama
+                    </h6>
+                    <div class="card-description-container">
+                        @if (string.IsNullOrEmpty(Model.Card.Description))
+                        {
+                            <div class="card-description-placeholder">
+                                <p class="text-muted mb-2">Kartın açıklamasını ekleyin...</p>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="card-description-text">
+                                <p>@Model.Card.Description</p>
+                            </div>
+                        }
+                        <div class="card-description-edit d-none">
+                            <textarea id="cardDescription" class="form-control mb-2" rows="3">@Model.Card.Description</textarea>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-primary save-description-btn">Kaydet</button>
+                                <button class="btn btn-outline-secondary cancel-description-btn">İptal</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Kontrol Listeleri (Checklists) -->
+                @if (Model.Card.Checklists != null && Model.Card.Checklists.Any())
+                {
+                    <div class="card-detail-section mb-3">
+                        <h6 class="text-muted mb-3">
+                            <i class="bi bi-check2-square me-2"></i>
+                            Kontrol Listeleri
+                        </h6>
+
+                        @foreach (var checklist in Model.Card.Checklists.OrderBy(c => c.Position))
+                        {
+                            <div class="card-checklist mb-3" data-checklist-id="@checklist.Id">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="mb-0">@checklist.Title</h6>
+                                    <div>
+                                        <button class="btn btn-sm btn-outline-danger delete-checklist-btn">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                @{
+                                    var items = checklist.Items.OrderBy(i => i.Position).ToList();
+                                    var completedCount = items.Count(i => i.IsCompleted);
+                                    var totalCount = items.Count;
+                                    var progressPercentage = totalCount > 0 ? (completedCount * 100 / totalCount) : 0;
+                                }
+
+                                <div class="progress checklist-progress">
+                                    <div class="progress-bar bg-success" role="progressbar" style="width: @progressPercentage%;"
+                                         aria-valuenow="@progressPercentage" aria-valuemin="0" aria-valuemax="100">
+                                        @progressPercentage%
+                                    </div>
+                                </div>
+
+                                <div class="checklist-items">
+                                    @foreach (var item in items)
+                                    {
+                                        <div class="checklist-item d-flex align-items-center py-2" data-item-id="@item.Id">
+                                            <div class="form-check">
+                                                <input class="form-check-input toggle-item" type="checkbox"
+                                                @(item.IsCompleted ? "checked" : "")
+                                                       id="item-@item.Id">
+                                                <label class="form-check-label @(item.IsCompleted ? "text-decoration-line-through" : "")"
+                                                       for="item-@item.Id">
+                                                    @item.Content
+                                                </label>
+                                            </div>
+                                            <div class="ms-auto">
+                                                <button class="btn btn-sm btn-link text-danger delete-item-btn">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+
+                                <!-- Yeni madde ekleme formu -->
+                                <div class="add-checklist-item-form mt-2">
+                                    <div class="input-group">
+                                        <input type="text" class="form-control new-item-input" placeholder="Yeni madde ekleyin...">
+                                        <button class="btn btn-primary add-item-btn" type="button">Ekle</button>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+
+                <!-- Yorumlar -->
+                <div class="card-detail-section mb-3">
+                    <h6 class="text-muted mb-3">
+                        <i class="bi bi-chat-left-text me-2"></i>
+                        Yorumlar
+                    </h6>
+
+                    <!-- Yeni yorum ekleme -->
+                    <div class="add-comment-form mb-3">
+                        <div class="input-group">
+                            <textarea id="newComment" class="form-control" placeholder="Bir yorum yazın..."></textarea>
+                        </div>
+                        <div class="d-grid mt-2">
+                            <button class="btn btn-primary add-comment-btn">Yorum Ekle</button>
+                        </div>
+                    </div>
+
+                    <!-- Mevcut yorumlar -->
+                    <div class="card-comments">
+                        @if (Model.Card.Comments != null && Model.Card.Comments.Any())
+                        {
+                            foreach (var comment in Model.Card.Comments.OrderByDescending(c => c.CreatedAt))
+                            {
+                                <div class="comment-item" data-comment-id="@comment.Id">
+                                    <div class="d-flex">
+                                        @if (!string.IsNullOrEmpty(comment.User.ProfilePicture))
+                                        {
+                                            <img src="@comment.User.ProfilePicture" class="rounded-circle comment-avatar me-2" alt="@comment.User.FirstName">
+                                        }
+                                        else
+                                        {
+                                            <div class="rounded-circle bg-secondary text-white comment-avatar me-2 d-flex align-items-center justify-content-center">
+                                                @comment.User.FirstName.Substring(0, 1)@comment.User.LastName.Substring(0, 1)
+                                            </div>
+                                        }
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div>
+                                                    <strong>@comment.User.FirstName @comment.User.LastName</strong>
+                                                    <span class="text-muted ms-2 small">@comment.CreatedAt.ToString("dd.MM.yyyy HH:mm")</span>
+                                                </div>
+                                                <div>
+                                                    <button class="btn btn-sm btn-link text-danger delete-comment-btn">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="comment-content">
+                                                @comment.Content
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="alert alert-light text-center">
+                                <i class="bi bi-chat-left text-muted"></i>
+                                <p class="text-muted mb-0">Henüz yorum yok.</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3 card-detail-sidebar">
+                <h6 class="text-muted mb-3">Ekle</h6>
+
+                <!-- Üyeler -->
+                <div class="sidebar-section mb-3">
+                    <button class="btn btn-outline-secondary w-100 text-start" data-bs-toggle="collapse" data-bs-target="#membersCollapse">
+                        <i class="bi bi-person me-2"></i>
+                        Üyeler
+                    </button>
+
+                    <div class="collapse mt-2" id="membersCollapse">
+                        <div class="card card-body">
+                            <h6 class="card-title">Kart Üyeleri</h6>
+
+                            <!-- Mevcut kart üyeleri -->
+                            @if (Model.Card.Members != null && Model.Card.Members.Any())
+                            {
+                                <div class="current-members mb-3">
+                                    @foreach (var member in Model.Card.Members)
+                                    {
+                                        <div class="d-flex align-items-center justify-content-between mb-2">
+                                            <div class="d-flex align-items-center">
+                                                @if (!string.IsNullOrEmpty(member.User.ProfilePicture))
+                                                {
+                                                    <img src="@member.User.ProfilePicture" class="rounded-circle me-2" width="24" height="24" alt="@member.User.FirstName">
+                                                }
+                                                else
+                                                {
+                                                    <div class="rounded-circle bg-secondary text-white me-2" style="width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem;">
+                                                        @member.User.FirstName.Substring(0, 1)@member.User.LastName.Substring(0, 1)
+                                                    </div>
+                                                }
+                                                <div>@member.User.FirstName @member.User.LastName</div>
+                                            </div>
+                                            <button class="btn btn-sm btn-link text-danger remove-member-btn" data-user-id="@member.UserId">
+                                                <i class="bi bi-x"></i>
+                                            </button>
+                                        </div>
+                                    }
+                                </div>
+                            }
+
+                            <!-- Eklenebilecek üyeler -->
+                            @if (Model.AvailableMembers != null && Model.AvailableMembers.Any())
+                            {
+                                <h6 class="card-subtitle mb-2 text-muted small">Pano Üyeleri</h6>
+                                <div class="available-members">
+                                    @foreach (var member in Model.AvailableMembers)
+                                    {
+                                        <div class="d-flex align-items-center justify-content-between mb-2">
+                                            <div class="d-flex align-items-center">
+                                                @if (!string.IsNullOrEmpty(member.ProfilePicture))
+                                                {
+                                                    <img src="@member.ProfilePicture" class="rounded-circle me-2" width="24" height="24" alt="@member.FirstName">
+                                                }
+                                                else
+                                                {
+                                                    <div class="rounded-circle bg-secondary text-white me-2" style="width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem;">
+                                                        @member.FirstName.Substring(0, 1)@member.LastName.Substring(0, 1)
+                                                    </div>
+                                                }
+                                                <div>@member.FirstName @member.LastName</div>
+                                            </div>
+                                            <button class="btn btn-sm btn-outline-primary add-member-btn" data-user-id="@member.Id">
+                                                <i class="bi bi-plus"></i>
+                                            </button>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="alert alert-info small mt-3 mb-0">
+                                    Eklenecek başka üye bulunmuyor.
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Etiketler -->
+                <div class="sidebar-section mb-3">
+                    <button class="btn btn-outline-secondary w-100 text-start" data-bs-toggle="collapse" data-bs-target="#labelsCollapse">
+                        <i class="bi bi-tag me-2"></i>
+                        Etiketler
+                    </button>
+
+                    <div class="collapse mt-2" id="labelsCollapse">
+                        <div class="card card-body">
+                            <h6 class="card-title">Kart Etiketleri</h6>
+
+                            <!-- Mevcut kart etiketleri -->
+                            @if (Model.Card.Labels != null && Model.Card.Labels.Any())
+                            {
+                                <div class="current-labels mb-3">
+                                    @foreach (var cardLabel in Model.Card.Labels)
+                                    {
+                                        <div class="d-flex align-items-center justify-content-between mb-2">
+                                            <div class="d-flex align-items-center">
+                                                <div class="label-color me-2" style="background-color: @cardLabel.Label.Color; width: 24px; height: 12px; border-radius: 3px;"></div>
+                                                <div>@cardLabel.Label.Name</div>
+                                            </div>
+                                            <button class="btn btn-sm btn-link text-danger remove-label-btn" data-label-id="@cardLabel.LabelId">
+                                                <i class="bi bi-x"></i>
+                                            </button>
+                                        </div>
+                                    }
+                                </div>
+                            }
+
+                            <!-- Eklenebilecek etiketler -->
+                            @{
+                                var usedLabelIds = Model.Card.Labels?.Select(cl => cl.LabelId).ToList() ?? new List<int>();
+                                var availableLabels = Model.BoardLabels.Where(bl => !usedLabelIds.Contains(bl.Id)).ToList();
+                            }
+
+                            @if (availableLabels.Any())
+                            {
+                                <h6 class="card-subtitle mb-2 text-muted small">Pano Etiketleri</h6>
+                                <div class="available-labels">
+                                    @foreach (var label in availableLabels)
+                                    {
+                                        <div class="d-flex align-items-center justify-content-between mb-2">
+                                            <div class="d-flex align-items-center">
+                                                <div class="label-color me-2" style="background-color: @label.Color; width: 24px; height: 12px; border-radius: 3px;"></div>
+                                                <div>@label.Name</div>
+                                            </div>
+                                            <button class="btn btn-sm btn-outline-primary add-label-btn" data-label-id="@label.Id">
+                                                <i class="bi bi-plus"></i>
+                                            </button>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="alert alert-info small mt-3 mb-0">
+                                    Eklenecek başka etiket bulunmuyor.
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sprint bölümü -->
+                <div class="sidebar-section mb-3">
+                    <button class="btn btn-outline-secondary w-100 text-start" data-bs-toggle="collapse" data-bs-target="#sprintCollapse">
+                        <i class="bi bi-clock-history me-2"></i>
+                        Sprint
+                    </button>
+
+                    <div class="collapse mt-2" id="sprintCollapse">
+                        <div class="card card-body">
+                            <h6 class="card-title">Sprint Ata</h6>
+
+                            <!-- Mevcut sprint -->
+                            @if (Model.Card.SprintId.HasValue && Model.Card.Sprint != null)
+                            {
+                                <div class="current-sprint mb-3">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <div>
+                                            <div><strong>@Model.Card.Sprint.Name</strong></div>
+                                            <small class="text-muted">@Model.Card.Sprint.StartDate.ToString("dd.MM.yyyy") - @Model.Card.Sprint.EndDate.ToString("dd.MM.yyyy")</small>
+                                        </div>
+                                        <button class="btn btn-sm btn-outline-danger remove-from-sprint-btn" data-card-id="@Model.Card.Id">
+                                            <i class="bi bi-x"></i>
+                                        </button>
+                                    </div>
+
+                                    <div class="mt-2">
+                                        <label for="storyPoints" class="form-label">Story Points</label>
+                                        <div class="input-group">
+                                            <input type="number" class="form-control" id="storyPoints" value="@Model.Card.StoryPoints" min="0" max="100">
+                                            <button class="btn btn-primary update-story-points-btn" type="button" data-card-id="@Model.Card.Id" data-sprint-id="@Model.Card.SprintId">Güncelle</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                @if (Model.Card.BoardList?.Board?.Sprints != null &&
+                               Model.Card.BoardList.Board.Sprints.Where(s => !s.IsCompleted).Any())
+                                {
+                                    var availableSprints = Model.Card.BoardList.Board.Sprints
+                                    .Where(s => !s.IsCompleted)
+                                    .OrderByDescending(s => s.IsActive)
+                                    .ThenBy(s => s.StartDate)
+                                    .ToList();
+
+                                    <div class="mb-3">
+                                        <label for="sprintSelect" class="form-label">Sprint Seç</label>
+                                        <select class="form-select" id="sprintSelect">
+                                            <option value="">Sprint Seçin...</option>
+                                            @foreach (var sprint in availableSprints)
+                                            {
+                                                <option value="@sprint.Id">@sprint.Name (@sprint.StartDate.ToString("dd.MM.yyyy") - @sprint.EndDate.ToString("dd.MM.yyyy"))</option>
+                                            }
+                                        </select>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="storyPoints" class="form-label">Story Points</label>
+                                        <input type="number" class="form-control" id="storyPoints" value="0" min="0" max="100">
+                                    </div>
+
+                                    <button class="btn btn-primary w-100 add-to-sprint-btn" data-card-id="@Model.Card.Id">
+                                        <i class="bi bi-plus"></i> Sprint'e Ekle
+                                    </button>
+                                }
+                                else
+                                {
+                                    <div class="alert alert-info mb-0">
+                                        Bu pano için henüz sprint oluşturulmamış.
+                                    </div>
+                                }
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Kontrol Listesi -->
+                <div class="sidebar-section mb-3">
+                    <button class="btn btn-outline-secondary w-100 text-start" id="addChecklistBtn">
+                        <i class="bi bi-check2-square me-2"></i>
+                        Kontrol Listesi
+                    </button>
+
+                    <div class="mt-2 d-none" id="addChecklistForm">
+                        <div class="card card-body">
+                            <h6 class="card-title">Kontrol Listesi Ekle</h6>
+
+                            <div class="mb-3">
+                                <label for="checklistTitle" class="form-label">Başlık</label>
+                                <input type="text" class="form-control" id="checklistTitle" placeholder="Kontrol listesi başlığı">
+                            </div>
+
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-primary save-checklist-btn">Ekle</button>
+                                <button class="btn btn-outline-secondary cancel-checklist-btn">İptal</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Son Tarih -->
+                <div class="sidebar-section mb-3">
+                    <button class="btn btn-outline-secondary w-100 text-start" data-bs-toggle="collapse" data-bs-target="#dueDateCollapse">
+                        <i class="bi bi-calendar-event me-2"></i>
+                        Son Tarih
+                    </button>
+
+                    <div class="collapse mt-2" id="dueDateCollapse">
+                        <div class="card card-body">
+                            <h6 class="card-title">Son Tarih</h6>
+
+                            <div class="mb-3">
+                                <label for="dueDate" class="form-label">Tarih</label>
+                                <input type="date" class="form-control" id="dueDate" value="@(Model.Card.DueDate?.ToString("yyyy-MM-dd"))">
+                            </div>
+
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-primary save-due-date-btn">Kaydet</button>
+                                @if (Model.Card.DueDate.HasValue)
+                                {
+                                    <button class="btn btn-outline-danger remove-due-date-btn">Kaldır</button>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <hr />
+
+                <h6 class="text-muted mb-3">İşlemler</h6>
+
+                <!-- Kartı Taşı -->
+                <div class="sidebar-section mb-3">
+                    <button class="btn btn-outline-secondary w-100 text-start" data-bs-toggle="collapse" data-bs-target="#moveCardCollapse">
+                        <i class="bi bi-arrow-left-right me-2"></i>
+                        Kartı Taşı
+                    </button>
+
+                    <div class="collapse mt-2" id="moveCardCollapse">
+                        <div class="card card-body">
+                            <h6 class="card-title">Kartı Taşı</h6>
+
+                            <div class="mb-3">
+                                <label for="targetList" class="form-label">Liste</label>
+                                <select class="form-select" id="targetList">
+                                    @foreach (var list in Model.Card.BoardList.Board.Lists.OrderBy(l => l.Position))
+                                    {
+                                        if (list.Id == Model.Card.BoardListId)
+                                        {
+                                            <option value="@list.Id" selected>@list.Title</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@list.Id">@list.Title</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="d-grid">
+                                <button class="btn btn-primary move-card-btn">Taşı</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Kartı Sil -->
+                <div class="sidebar-section mb-3">
+                    <button class="btn btn-outline-danger w-100 text-start" id="deleteCardBtn">
+                        <i class="bi bi-trash me-2"></i>
+                        Kartı Sil
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

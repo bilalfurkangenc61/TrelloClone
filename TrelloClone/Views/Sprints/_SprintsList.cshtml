@@ -1,0 +1,62 @@
+﻿@model List<TrelloClone.Models.Sprint>
+
+@if (Model != null && Model.Any())
+{
+    <div class="list-group mt-3">
+        @foreach (var sprint in Model)
+        {
+            <div class="list-group-item list-group-item-action">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="d-flex align-items-center">
+                            <h6 class="mb-1">@sprint.Name</h6>
+                            @if (sprint.IsActive)
+                            {
+                                <span class="badge bg-success ms-2">Aktif</span>
+                            }
+                            else if (sprint.EndDate < DateTime.Now)
+                            {
+                                <span class="badge bg-secondary ms-2">Tamamlandı</span>
+                            }
+                            else if (sprint.StartDate > DateTime.Now)
+                            {
+                                <span class="badge bg-info ms-2">Yaklaşan</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-warning ms-2">Pasif</span>
+                            }
+                        </div>
+                        <small class="text-muted d-block">
+                            @sprint.StartDate.ToString("dd.MM.yyyy") - @sprint.EndDate.ToString("dd.MM.yyyy")
+                        </small>
+                        @if (!string.IsNullOrEmpty(sprint.Goal))
+                        {
+                            <small class="text-muted d-block">Hedef: @sprint.Goal</small>
+                        }
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-outline-primary view-sprint-btn" data-sprint-id="@sprint.Id">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                        <button class="btn btn-sm @(sprint.IsActive ? "btn-outline-secondary" : "btn-outline-success") toggle-sprint-active-btn"
+                                data-sprint-id="@sprint.Id"
+                                data-is-active="@sprint.IsActive.ToString()">
+                            <i class="bi @(sprint.IsActive ? "bi-pause" : "bi-play")"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger delete-sprint-btn" data-sprint-id="@sprint.Id">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="alert alert-info mt-3">
+        <i class="bi bi-info-circle me-2"></i>
+        Henüz hiç sprint oluşturulmamış. "Yeni Sprint" sekmesinden ilk sprintinizi oluşturabilirsiniz.
+    </div>
+}

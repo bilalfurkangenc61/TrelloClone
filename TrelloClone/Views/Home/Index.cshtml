@@ -1,0 +1,443 @@
+﻿<!-- Views/Home/Index.cshtml -->
+@model IEnumerable<TrelloClone.Models.Subscription>
+@{
+    ViewData["Title"] = "Ana Sayfa";
+}
+
+<div class="container-fluid p-0">
+    <!-- Hero Section -->
+    <div class="hero-section bg-gradient-primary text-white py-5">
+        <div class="container-fluid px-md-5 py-5">
+            <div class="row align-items-center">
+                <div class="col-lg-6 px-4 px-md-5">
+                    <h1 class="display-3 fw-bold mb-4 animate__animated animate__fadeInUp">Takımınızla Birlikte <span class="text-warning">Daha Hızlı İlerleyin</span></h1>
+                    <p class="lead mb-4 animate__animated animate__fadeInUp animate__delay-1s">Projelerinizi görsel panolarla yönetin, işbirliği yapın ve üretkenliğinizi artırın. Tüm ekip için kolay, sezgisel ve esnek.</p>
+                    
+                </div>
+              
+            </div>
+        </div>
+        <div class="wave-bottom">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320">
+                <path fill="#ffffff" fill-opacity="1" d="M0,288L48,272C96,256,192,224,288,213.3C384,203,480,213,576,229.3C672,245,768,267,864,245.3C960,224,1056,160,1152,149.3C1248,139,1344,181,1392,202.7L1440,224L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
+            </svg>
+        </div>
+    </div>
+
+    <!-- Features Section -->
+    <div id="features" class="features-section py-5">
+        <div class="container-fluid px-md-5 py-5">
+            <h2 class="text-center mb-2 fw-bold display-5">Neden Bizi Seçmelisiniz?</h2>
+            <p class="text-center mb-5 text-muted fs-5">Projenizi yönetmenin en verimli yolu</p>
+            <div class="row g-5 px-4 px-md-5">
+                <div class="col-md-4">
+                    <div class="card h-100 border-0 rounded-4 shadow-hover feature-card">
+                        <div class="card-body p-5">
+                            <div class="feature-icon bg-primary text-white rounded-3 mb-4 d-inline-flex align-items-center justify-content-center">
+                                <i class="bi bi-kanban fs-3"></i>
+                            </div>
+                            <h4 class="card-title mb-3 fw-bold">Görsel İş Akışı</h4>
+                            <p class="card-text fs-5">Sezgisel sürükle-bırak arayüzü ile kartlarla çalışın. Görevlerinizi organize edin ve ilerlemeyi anında görün.</p>
+                            <a href="#" class="btn btn-link p-0 text-primary mt-3 stretched-link">
+                                Daha Fazla <i class="bi bi-arrow-right ms-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100 border-0 rounded-4 shadow-hover feature-card">
+                        <div class="card-body p-5">
+                            <div class="feature-icon bg-success text-white rounded-3 mb-4 d-inline-flex align-items-center justify-content-center">
+                                <i class="bi bi-people fs-3"></i>
+                            </div>
+                            <h4 class="card-title mb-3 fw-bold">Gerçek Zamanlı İşbirliği</h4>
+                            <p class="card-text fs-5">Tüm ekibiniz aynı panolarda çalışabilir. Yorumlar ekleyin, görevlere atama yapın ve birlikte başarıya ulaşın.</p>
+                            <a href="#" class="btn btn-link p-0 text-success mt-3 stretched-link">
+                                Daha Fazla <i class="bi bi-arrow-right ms-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100 border-0 rounded-4 shadow-hover feature-card">
+                        <div class="card-body p-5">
+                            <div class="feature-icon bg-warning text-white rounded-3 mb-4 d-inline-flex align-items-center justify-content-center">
+                                <i class="bi bi-graph-up fs-3"></i>
+                            </div>
+                            <h4 class="card-title mb-3 fw-bold">İlerlemeyi Takip Edin</h4>
+                            <p class="card-text fs-5">Kontrol listeleri, son tarihler ve raporlarla proje durumunuzu görün. Zamanında teslim için hedeflerinizi izleyin.</p>
+                            <a href="#" class="btn btn-link p-0 text-warning mt-3 stretched-link">
+                                Daha Fazla <i class="bi bi-arrow-right ms-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pricing Section -->
+    <div class="pricing-section py-5">
+        <div class="container-fluid px-md-5 py-5">
+            <div class="text-center mb-5">
+                <h2 class="display-5 fw-bold mb-2">Planlarımız</h2>
+                <p class="fs-5 text-muted">İhtiyaçlarınıza uygun çözümler</p>
+            </div>
+            <div class="row g-4 justify-content-center px-4 px-md-5">
+                @foreach (var subscription in Model)
+                {
+                    <div class="col-md-4">
+                        <div class="card h-100 border-0 rounded-4 pricing-card @(subscription.Name == "Premium" ? "popular-plan" : "")">
+                            @if (subscription.Name == "Premium")
+                            {
+                                <span class="badge bg-primary position-absolute top-0 end-0 mt-3 me-3 rounded-pill px-3 py-2 fw-normal">
+                                    <i class="bi bi-star-fill me-1"></i> En Popüler
+                                </span>
+                            }
+                            <div class="card-header bg-transparent border-0 text-center pt-4 pb-0">
+                                <h3 class="card-title fw-bold">
+                                    @switch (subscription.Name)
+                                    {
+                                        case "Free":
+                                            @:Ücretsiz
+                                            break;
+                                        case "Basic":
+                                            @:Temel
+                                            break;
+                                        case "Premium":
+                                            @:Premium
+                                            break;
+                                        default:
+                                            @subscription.Name
+                                            break;
+                                    }
+                                </h3>
+                                <div class="price mt-3">
+                                    <h4 class="mb-0 display-4 fw-bold">
+                                        @(subscription.Price == 0 ? "Ücretsiz" : $"{subscription.Price} ₺")
+                                    </h4>
+                                    @if (subscription.Price > 0)
+                                    {
+                                        <span class="text-muted fs-5">/aylık</span>
+                                    }
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <p class="card-text text-center mb-4 fs-5">
+                                    @switch (subscription.Name)
+                                    {
+                                        case "Free":
+                                            @:Bireysel kullanım için temel özellikler
+                                            break;
+                                        case "Basic":
+                                            @:Küçük ekipler için ideal çözüm
+                                            break;
+                                        case "Premium":
+                                            @:Büyük organizasyonlar için tam kapsamlı
+                                            break;
+                                        default:
+                                            @subscription.Description
+                                            break;
+                                    }
+                                </p>
+                                <ul class="list-group list-group-flush plan-features">
+                                    <li class="list-group-item border-0 px-0 py-3 d-flex align-items-center">
+                                        <i class="bi bi-check-circle-fill text-success me-3 fs-5"></i>
+                                        <span class="fs-5">En fazla <strong>@subscription.MaxBoards</strong> pano</span>
+                                    </li>
+                                    <li class="list-group-item border-0 px-0 py-3 d-flex align-items-center">
+                                        <i class="bi bi-check-circle-fill text-success me-3 fs-5"></i>
+                                        <span class="fs-5">Pano başına <strong>@subscription.MaxMembersPerBoard</strong> üye</span>
+                                    </li>
+                                    <li class="list-group-item border-0 px-0 py-3 d-flex align-items-center">
+                                        @if (subscription.AllowAttachments)
+                                        {
+                                            <i class="bi bi-check-circle-fill text-success me-3 fs-5"></i>
+                                            <span class="fs-5">Dosya ekleri (<strong>@(subscription.MaxAttachmentSize / (1024 * 1024)) MB</strong>)</span>
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-x-circle-fill text-muted me-3 fs-5"></i>
+                                            <span class="text-muted fs-5">Dosya eki desteği</span>
+                                        }
+                                    </li>
+                                    <li class="list-group-item border-0 px-0 py-3 d-flex align-items-center">
+                                        @if (subscription.AllowCustomBackgrounds)
+                                        {
+                                            <i class="bi bi-check-circle-fill text-success me-3 fs-5"></i>
+                                            <span class="fs-5">Özel arka planlar</span>
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-x-circle-fill text-muted me-3 fs-5"></i>
+                                            <span class="text-muted fs-5">Özel arka planlar</span>
+                                        }
+                                    </li>
+                                    <li class="list-group-item border-0 px-0 py-3 d-flex align-items-center">
+                                        @if (subscription.AdvancedReporting)
+                                        {
+                                            <i class="bi bi-check-circle-fill text-success me-3 fs-5"></i>
+                                            <span class="fs-5">Gelişmiş raporlama</span>
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-x-circle-fill text-muted me-3 fs-5"></i>
+                                            <span class="text-muted fs-5">Gelişmiş raporlama</span>
+                                        }
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="card-footer bg-transparent border-0 text-center pb-5 pt-3">
+                                <a asp-area="Identity" asp-page="/Account/Register" asp-route-plan="@subscription.Name"
+                                   class="btn @(subscription.Name == "Premium" ? "btn-primary" : "btn-outline-primary") btn-lg rounded-pill px-5 py-3 fw-bold shadow-sm">
+                                    @if (subscription.Price == 0)
+                                    {
+                                        <span>Ücretsiz Başlayın</span>
+                                    }
+                                    else
+                                    {
+                                        <span>Satın Al</span>
+                                    }
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Testimonials Section -->
+    <div class="testimonials-section py-5 bg-light">
+        <div class="container-fluid px-md-5 py-5">
+            <div class="text-center mb-5">
+                <h2 class="display-5 fw-bold mb-2">Müşterilerimizin Yorumları</h2>
+                <p class="fs-5 text-muted">İşte kullanıcılarımızın söyledikleri</p>
+            </div>
+            <div class="row g-4 px-4 px-md-5">
+                <div class="col-md-4">
+                    <div class="card h-100 border-0 rounded-4 testimonial-card">
+                        <div class="card-body p-4">
+                            <div class="d-flex mb-4">
+                                <i class="bi bi-star-fill text-warning me-1 fs-5"></i>
+                                <i class="bi bi-star-fill text-warning me-1 fs-5"></i>
+                                <i class="bi bi-star-fill text-warning me-1 fs-5"></i>
+                                <i class="bi bi-star-fill text-warning me-1 fs-5"></i>
+                                <i class="bi bi-star-fill text-warning fs-5"></i>
+                            </div>
+                            <p class="card-text fs-5 mb-4">"Bu uygulamayla ekibimizin verimliliği inanılmaz derecede arttı. Artık tüm projelerimizi kolayca organize edebiliyoruz."</p>
+                            <div class="d-flex align-items-center">
+                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px;">
+                                    <span class="fw-bold">AY</span>
+                                </div>
+                                <div>
+                                    <h5 class="mb-0 fw-bold">Ahmet Yılmaz</h5>
+                                    <p class="mb-0 text-muted">Proje Yöneticisi, ABC Şirketi</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100 border-0 rounded-4 testimonial-card">
+                        <div class="card-body p-4">
+                            <div class="d-flex mb-4">
+                                <i class="bi bi-star-fill text-warning me-1 fs-5"></i>
+                                <i class="bi bi-star-fill text-warning me-1 fs-5"></i>
+                                <i class="bi bi-star-fill text-warning me-1 fs-5"></i>
+                                <i class="bi bi-star-fill text-warning me-1 fs-5"></i>
+                                <i class="bi bi-star-fill text-warning fs-5"></i>
+                            </div>
+                            <p class="card-text fs-5 mb-4">"Takımımız arasındaki iletişim sorunu tamamen çözüldü. Tüm görevleri tek bir platformda yönetebiliyoruz."</p>
+                            <div class="d-flex align-items-center">
+                                <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px;">
+                                    <span class="fw-bold">MK</span>
+                                </div>
+                                <div>
+                                    <h5 class="mb-0 fw-bold">Mehmet Kaya</h5>
+                                    <p class="mb-0 text-muted">Kurucu, XYZ Teknoloji</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100 border-0 rounded-4 testimonial-card">
+                        <div class="card-body p-4">
+                            <div class="d-flex mb-4">
+                                <i class="bi bi-star-fill text-warning me-1 fs-5"></i>
+                                <i class="bi bi-star-fill text-warning me-1 fs-5"></i>
+                                <i class="bi bi-star-fill text-warning me-1 fs-5"></i>
+                                <i class="bi bi-star-fill text-warning me-1 fs-5"></i>
+                                <i class="bi bi-star-half text-warning fs-5"></i>
+                            </div>
+                            <p class="card-text fs-5 mb-4">"Kullanımı çok kolay ve sezgisel. Premium planda sunulan özellikler gerçekten işimizi kolaylaştırıyor."</p>
+                            <div class="d-flex align-items-center">
+                                <div class="rounded-circle bg-warning text-white d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px;">
+                                    <span class="fw-bold">EG</span>
+                                </div>
+                                <div>
+                                    <h5 class="mb-0 fw-bold">Elif Güneş</h5>
+                                    <p class="mb-0 text-muted">Pazarlama Direktörü, DEF Ltd.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CTA Section -->
+    <div class="cta-section py-5">
+        <div class="container-fluid px-md-5">
+            <div class="row justify-content-center">
+                <div class="col-md-10">
+                    <div class="card border-0 rounded-4 bg-gradient-primary text-white shadow-lg">
+                        <div class="card-body p-5 text-center">
+                            <h2 class="display-5 fw-bold mb-3">Hemen Başlayın</h2>
+                            <p class="fs-4 mb-4">Projenizi yönetmenin en kolay yolu bir tık uzağınızda</p>
+                            <a asp-area="Identity" asp-page="/Account/Register" class="btn btn-light btn-lg px-5 py-3 rounded-pill fw-bold shadow-sm">
+                                <i class="bi bi-rocket-takeoff me-2"></i>Ücretsiz Hesap Oluşturun
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+    <style>
+        /* Hero Section */
+        .hero-section {
+            position: relative;
+            overflow: hidden;
+            padding-top: 5rem;
+        }
+
+        .bg-gradient-primary {
+            background: linear-gradient(135deg, #007bff, #6f42c1);
+        }
+
+        .wave-bottom {
+            position: absolute;
+            bottom: -10px;
+            left: 0;
+            width: 100%;
+        }
+
+        .floating-badge {
+            animation: float 3s ease-in-out infinite;
+            z-index: 1;
+        }
+
+        /* Animasyon için CSS */
+        @@keyframes float {
+            0% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+
+            100% {
+                transform: translateY(0px);
+            }
+        }
+
+        /* Feature Cards */
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            font-size: 24px;
+        }
+
+        .feature-card {
+            transition: all 0.3s ease;
+            border-bottom: 5px solid transparent;
+        }
+
+            .feature-card:hover {
+                transform: translateY(-10px);
+                border-bottom: 5px solid #007bff;
+            }
+
+        .shadow-hover:hover {
+            box-shadow: 0 .5rem 1rem rgba(0,0,0,.15) !important;
+        }
+
+        /* Pricing Cards */
+        .pricing-card {
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .popular-plan {
+            border-top: 5px solid #007bff !important;
+            transform: scale(1.05);
+            box-shadow: 0 .5rem 1rem rgba(0,0,0,.15) !important;
+            z-index: 1;
+        }
+
+        .pricing-card:hover:not(.popular-plan) {
+            transform: translateY(-10px);
+            box-shadow: 0 .5rem 1rem rgba(0,0,0,.15) !important;
+        }
+
+        .plan-features .list-group-item {
+            border-bottom: 1px solid rgba(0,0,0,.05) !important;
+        }
+
+            .plan-features .list-group-item:last-child {
+                border-bottom: none !important;
+            }
+
+        /* Testimonial Cards */
+        .testimonial-card {
+            transition: all 0.3s ease;
+            box-shadow: 0 .125rem .25rem rgba(0,0,0,.075) !important;
+        }
+
+            .testimonial-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 .5rem 1rem rgba(0,0,0,.15) !important;
+            }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 10px;
+        }
+
+            ::-webkit-scrollbar-thumb:hover {
+                background: #a8a8a8;
+            }
+
+        /* Modern rounded corners */
+        .rounded-4 {
+            border-radius: 15px !important;
+        }
+
+        /* Responsive adjustments */
+        @@media (max-width: 768px) {
+            .popular-plan {
+                transform: scale(1);
+            }
+        }
+    </style>
+}

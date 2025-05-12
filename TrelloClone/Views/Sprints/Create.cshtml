@@ -1,0 +1,87 @@
+﻿@model TrelloClone.Models.Sprint
+@{
+    ViewData["Title"] = "Yeni Sprint Oluştur";
+}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Yeni Sprint Oluştur</h4>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Create" method="post">
+                        @if (Model.BoardId.HasValue)
+                        {
+                            <input type="hidden" name="BoardId" value="@Model.BoardId" />
+                        }
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                        <div class="mb-3">
+                            <label asp-for="Name" class="form-label"></label>
+                            <input asp-for="Name" class="form-control" />
+                            <span asp-validation-for="Name" class="text-danger"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Description" class="form-label"></label>
+                            <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+                            <span asp-validation-for="Description" class="text-danger"></span>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="StartDate" class="form-label"></label>
+                                <input asp-for="StartDate" type="date" class="form-control" />
+                                <span asp-validation-for="StartDate" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="EndDate" class="form-label"></label>
+                                <input asp-for="EndDate" type="date" class="form-control" />
+                                <span asp-validation-for="EndDate" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Goal" class="form-label"></label>
+                            <textarea asp-for="Goal" class="form-control" rows="2"></textarea>
+                            <span asp-validation-for="Goal" class="text-danger"></span>
+                            <div class="form-text">Sprint için ana hedef veya misyon belirtin</div>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input id="cbIsActive" type="checkbox" class="form-check-input" @(Model.IsActive ? "checked" : "") />
+                            <input type="hidden" name="IsActive" id="hdnIsActive" value="@Model.IsActive.ToString().ToLower()" />
+                            <label class="form-check-label" for="cbIsActive">Aktif Sprint</label>
+                            <div class="form-text">Eğer işaretlenirse, mevcut aktif sprint pasif yapılacaktır.</div>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            @if (Model.BoardId.HasValue)
+                            {
+                                <a asp-action="Index" asp-route-id="@Model.BoardId" class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-left"></i> Sprintler Listesine Dön
+                                </a>
+                            }
+                            else
+                            {
+                                <a asp-action="AllSprints" class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-left"></i> Sprintler Listesine Dön
+                                </a>
+                            }
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check2-circle"></i> Sprint Oluştur
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(document).ready(function () {
+            // Checkbox değişimini gizli input'a yansıt
+            $("#cbIsActive").change(function () {
+                var isChecked = $(this).is(":checked");
+                $("#hdnIsActive").val(isChecked.toString().toLowerCase());
+            });
+        });
+    </script>
+}

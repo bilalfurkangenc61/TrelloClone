@@ -1,0 +1,281 @@
+﻿@model IEnumerable<TrelloClone.Models.Sprint>
+@{
+    ViewData["Title"] = "Tüm Sprintler";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Tüm Sprintler</h1>
+        <!-- Yeni Sprint Oluştur butonu eklendi -->
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createSprintModal">
+            <i class="bi bi-plus"></i> Sprint Oluştur
+        </button>
+    </div>
+
+    @if (Model == null || !Model.Any())
+    {
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle me-2"></i>
+            Henüz hiç sprint oluşturulmamış. Yukarıdaki "Sprint Oluştur" butonunu kullanarak ilk sprintinizi oluşturabilirsiniz.
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Aktif Sprintler</h5>
+                    </div>
+                    <div class="card-body">
+                        @{
+                            var activeSprints = Model.Where(s => s.IsActive && !s.IsCompleted).ToList();
+                        }
+
+                        @if (activeSprints.Any())
+                        {
+                            <div class="list-group">
+                                @foreach (var sprint in activeSprints)
+                                {
+                                    <div class="list-group-item list-group-item-action">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="mb-1">@sprint.Name</h6>
+                                                @if (sprint.Board != null)
+                                                {
+                                                    <small class="text-muted">Pano: @sprint.Board.Title</small>
+                                                }
+                                                <div>
+                                                    <small class="text-muted">
+                                                        @sprint.StartDate.ToString("dd.MM.yyyy") - @sprint.EndDate.ToString("dd.MM.yyyy")
+                                                    </small>
+                                                </div>
+                                            </div>
+                                            <a asp-action="Details" asp-route-id="@sprint.Id" class="btn btn-sm btn-primary">
+                                                <i class="bi bi-eye"></i> Detaylar
+                                            </a>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="text-muted text-center py-2">Aktif sprint bulunmuyor.</p>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Yaklaşan Sprintler</h5>
+                    </div>
+                    <div class="card-body">
+                        @{
+                            var upcomingSprints = Model.Where(s => s.StartDate > DateTime.Now && !s.IsActive && !s.IsCompleted).OrderBy(s => s.StartDate).ToList();
+                        }
+
+                        @if (upcomingSprints.Any())
+                        {
+                            <div class="list-group">
+                                @foreach (var sprint in upcomingSprints)
+                                {
+                                    <div class="list-group-item list-group-item-action">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="mb-1">@sprint.Name</h6>
+                                                @if (sprint.Board != null)
+                                                {
+                                                    <small class="text-muted">Pano: @sprint.Board.Title</small>
+                                                }
+                                                <div>
+                                                    <small class="text-muted">
+                                                        @sprint.StartDate.ToString("dd.MM.yyyy") - @sprint.EndDate.ToString("dd.MM.yyyy")
+                                                    </small>
+                                                </div>
+                                            </div>
+                                            <a asp-action="Details" asp-route-id="@sprint.Id" class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-eye"></i> Detaylar
+                                            </a>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="text-muted text-center py-2">Yaklaşan sprint bulunmuyor.</p>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tamamlanan Sprintler bölümü de ekleyelim -->
+            <div class="col-md-12">
+                <div class="card mb-4">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0">Tamamlanan Sprintler</h5>
+                    </div>
+                    <div class="card-body">
+                        @{
+                            var completedSprints = Model.Where(s => s.IsCompleted).OrderByDescending(s => s.EndDate).ToList();
+                        }
+
+                        @if (completedSprints.Any())
+                        {
+                            <div class="list-group">
+                                @foreach (var sprint in completedSprints)
+                                {
+                                    <div class="list-group-item list-group-item-action">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="mb-1">@sprint.Name</h6>
+                                                @if (sprint.Board != null)
+                                                {
+                                                    <small class="text-muted">Pano: @sprint.Board.Title</small>
+                                                }
+                                                <div>
+                                                    <small class="text-muted">
+                                                        @sprint.StartDate.ToString("dd.MM.yyyy") - @sprint.EndDate.ToString("dd.MM.yyyy")
+                                                    </small>
+                                                </div>
+                                            </div>
+                                            <a asp-action="Details" asp-route-id="@sprint.Id" class="btn btn-sm btn-outline-secondary">
+                                                <i class="bi bi-eye"></i> Detaylar
+                                            </a>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="text-muted text-center py-2">Tamamlanan sprint bulunmuyor.</p>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Sprint Oluşturma Modal -->
+<div class="modal fade" id="createSprintModal" tabindex="-1" aria-labelledby="createSprintModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createSprintModalLabel">Yeni Sprint Oluştur</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createSprintForm" asp-action="Create" asp-controller="Sprints" method="post">
+                    <div class="mb-3">
+                        <label for="boardId" class="form-label">Pano (İsteğe Bağlı)</label>
+                        <select id="boardId" name="BoardId" class="form-select">
+                            <option value="">Pano Seçin (İsteğe Bağlı)...</option>
+                            <!-- Pano listesi JavaScript ile doldurulacak -->
+                        </select>
+                        <div class="form-text">Sprint bir panoya bağlı olmak zorunda değildir. İsterseniz boş bırakabilirsiniz.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Sprint Adı</label>
+                        <input type="text" class="form-control" id="name" name="Name" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Açıklama</label>
+                        <textarea class="form-control" id="description" name="Description" rows="3"></textarea>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="startDate" class="form-label">Başlangıç Tarihi</label>
+                            <input type="date" class="form-control" id="startDate" name="StartDate" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="endDate" class="form-label">Bitiş Tarihi</label>
+                            <input type="date" class="form-control" id="endDate" name="EndDate" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="goal" class="form-label">Sprint Hedefi</label>
+                        <textarea class="form-control" id="goal" name="Goal" rows="2"></textarea>
+                        <div class="form-text">Sprint için ana hedef veya misyon belirtin</div>
+                    </div>
+
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="isActive" name="IsActive">
+                        <label class="form-check-label" for="isActive">Aktif Sprint</label>
+                        <div class="form-text">Eğer işaretlenirse, mevcut aktif sprint pasif yapılacaktır.</div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">İptal</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check2-circle"></i> Sprint Oluştur
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Modal açıldığında panoları getir
+            $('#createSprintModal').on('shown.bs.modal', function() {
+                // Panoları getir
+                try {
+                    $.ajax({
+                        url: '/Boards/GetUserBoards',
+                        type: 'GET',
+                        success: function(boards) {
+                            var boardSelect = $('#boardId');
+                            boardSelect.empty();
+                            boardSelect.append('<option value="">Pano Seçin (İsteğe Bağlı)...</option>');
+
+                            if (boards && boards.length > 0) {
+                                $.each(boards, function(i, board) {
+                                    boardSelect.append($('<option></option>').val(board.id).text(board.title));
+                                });
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error("Panolar yüklenirken hata: ", error);
+                            $('#boardId').after('<div class="text-danger mt-1">Panolar yüklenemedi. Daha sonra tekrar deneyin veya pano seçmeden devam edin.</div>');
+                        }
+                    });
+                } catch (e) {
+                    console.error("AJAX hatası: ", e);
+                }
+
+                // Tarih alanlarını bugünün tarihi ile doldur
+                var today = new Date().toISOString().split('T')[0];
+                var twoWeeksLater = new Date();
+                twoWeeksLater.setDate(twoWeeksLater.getDate() + 14);
+                var twoWeeksLaterStr = twoWeeksLater.toISOString().split('T')[0];
+
+                $('#startDate').val(today);
+                $('#endDate').val(twoWeeksLaterStr);
+            });
+
+            // Form gönderimi
+            $('#createSprintForm').submit(function(e) {
+                var startDate = new Date($('#startDate').val());
+                var endDate = new Date($('#endDate').val());
+
+                if (endDate <= startDate) {
+                    e.preventDefault();
+                    alert('Bitiş tarihi başlangıç tarihinden sonra olmalıdır.');
+                    return false;
+                }
+            });
+        });
+    </script>
+}

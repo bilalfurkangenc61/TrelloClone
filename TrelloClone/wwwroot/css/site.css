@@ -1,0 +1,192 @@
+/* wwwroot/css/site.css */
+html {
+    font-size: 14px;
+}
+
+@media (min-width: 768px) {
+    html {
+        font-size: 16px;
+    }
+}
+
+.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+    box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+}
+
+html {
+    position: relative;
+    min-height: 100%;
+}
+
+body {
+    margin-bottom: 60px;
+    overflow-x: hidden;
+}
+
+/* Custom Styles */
+.feature-icon {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.board-card {
+    transition: transform 0.2s ease-in-out;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+    .board-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .board-card .card-body {
+        height: 120px;
+        background-size: cover;
+        background-position: center;
+        position: relative;
+    }
+
+.board-title {
+    color: white;
+    text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+    position: absolute;
+    bottom: 10px;
+    left: 15px;
+    margin: 0;
+}
+
+/* Kanban board styles */
+.board-lists-container {
+    display: flex;
+    overflow-x: auto;
+    padding: 1rem 0.5rem;
+    height: calc(100vh - 180px);
+    align-items: flex-start;
+}
+
+.board-list {
+    width: 272px;
+    flex: 0 0 auto;
+    margin-right: 1rem;
+    max-height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.board-list-header {
+    padding: 10px;
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+    font-weight: bold;
+}
+
+.board-list-cards {
+    overflow-y: auto;
+    padding: 0 4px;
+    flex: 1;
+}
+
+.board-card {
+    margin-bottom: 8px;
+    border-radius: 3px;
+    background-color: white;
+    box-shadow: 0 1px 0 rgba(9, 30, 66, 0.25);
+    cursor: pointer;
+}
+
+.add-list-form {
+    width: 272px;
+    flex: 0 0 auto;
+}
+
+.add-card-placeholder {
+    padding: 8px;
+    color: #5e6c84;
+}
+
+    .add-card-placeholder:hover {
+        background-color: rgba(9, 30, 66, 0.08);
+        color: #172b4d;
+        text-decoration: none;
+    }
+
+/* Card detail modal styles */
+.card-detail-modal .modal-content {
+    border-radius: 8px;
+}
+
+.card-detail-modal .card-detail-header {
+    padding: 20px 20px 0 20px;
+}
+
+.card-detail-modal .card-detail-body {
+    padding: 20px;
+}
+
+.card-detail-modal .card-detail-sidebar {
+    background-color: #f7f9fa;
+    padding: 20px;
+    border-radius: 0 8px 8px 0;
+}
+
+.comment-item {
+    margin-bottom: 12px;
+}
+
+.comment-avatar {
+    width: 32px;
+    height: 32px;
+}
+
+.checklist-progress {
+    height: 8px;
+    margin-bottom: 8px;
+}
+
+.checklist-item {
+    margin-bottom: 4px;
+}
+
+/* User profile styles */
+.profile-header {
+    background-color: #f7f9fa;
+    padding: 30px 0;
+}
+
+.profile-avatar {
+    width: 100px;
+    height: 100px;
+}
+
+/* Responsive tweaks */
+@media (max-width: 767.98px) {
+    .board-lists-container {
+        height: calc(100vh - 150px);
+    }
+
+    .card-detail-modal .card-detail-sidebar {
+        border-radius: 0 0 8px 8px;
+    }
+
+    .container-fluid {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+}
+
+/* Full width container when authenticated */
+.authenticated-container {
+    max-width: 100%;
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+@media (min-width: 768px) {
+    .authenticated-container {
+        padding-left: 30px;
+        padding-right: 30px;
+    }
+}

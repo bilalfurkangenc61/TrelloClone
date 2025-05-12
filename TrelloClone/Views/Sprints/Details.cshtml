@@ -1,0 +1,221 @@
+﻿@model TrelloClone.Models.Sprint
+@{
+    ViewData["Title"] = Model.Name;
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1>@Model.Name</h1>
+            <div class="text-muted">
+                <span class="me-2">@Model.StartDate.ToString("dd.MM.yyyy") - @Model.EndDate.ToString("dd.MM.yyyy")</span>
+                @if (Model.IsActive)
+                {
+                    <span class="badge bg-success">Aktif Sprint</span>
+                }
+                @if (Model.IsCompleted)
+                {
+                    <span class="badge bg-secondary">Tamamlandı</span>
+                }
+            </div>
+            <p class="mt-2">@Model.Description</p>
+        </div>
+        <div>
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-primary">
+                <i class="bi bi-pencil"></i> Düzenle
+            </a>
+            <a asp-action="Index" asp-route-id="@Model.BoardId" class="btn btn-outline-secondary ms-2">
+                <i class="bi bi-arrow-left"></i> Sprintler Listesine Dön
+            </a>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.Goal))
+    {
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Sprint Hedefi</h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-0">@Model.Goal</p>
+            </div>
+        </div>
+    }
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">İlerleme</h5>
+        </div>
+        <div class="card-body">
+            @{
+                var cardCount = Model.Cards?.Count ?? 0;
+                var completedCardCount = Model.Cards?.Count(c => c.IsCompleted) ?? 0;
+                var progressPercentage = cardCount > 0 ? (completedCardCount * 100 / cardCount) : 0;
+            }
+
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div>Tamamlanan Kartlar: @completedCardCount / @cardCount</div>
+                <div>@progressPercentage%</div>
+            </div>
+            <div class="progress" style="height: 10px;">
+                <div class="progress-bar bg-success" role="progressbar" style="width: @progressPercentage%"
+                     aria-valuenow="@progressPercentage" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Sprint Kartları</h5>
+            <a asp-controller="Boards" asp-action="Details" asp-route-id="@Model.BoardId" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-kanban"></i> Pano Görünümü
+            </a>
+        </div>
+        <div class="card-body">
+            @if (Model.Cards != null && Model.Cards.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Kart</th>
+                                <th>Liste</th>
+                                <th>Story Points</th>
+                                <th>Durum</th>
+                                <th>İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var card in Model.Cards.OrderBy(c => c.BoardList.Title).ThenBy(c => c.Position))
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            @if (!string.IsNullOrEmpty(card.CoverColor))
+                                            {
+                                                <div class="card-color-indicator me-2" style="background-color: @card.CoverColor; width: 16px; height: 16px; border-radius: 3px;"></div>
+                                            }
+                                            <div>@card.Title</div>
+                                        </div>
+                                    </td>
+                                    <td>@card.BoardList.Title</td>
+                                    <td>@(card.StoryPoints.HasValue ? card.StoryPoints.Value.ToString() : "-")</td>
+                                    <td>
+                                        @if (card.IsCompleted)
+                                        {
+                                            <span class="badge bg-success">Tamamlandı</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning text-dark">Devam Ediyor</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <button type="button" class="btn btn-sm btn-outline-primary view-card-btn" data-card-id="@card.Id">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger remove-from-sprint-btn" data-card-id="@card.Id">
+                                                <i class="bi bi-x-circle"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Bu sprinte henüz kart eklenmemiş.
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Kartı Sprintten Çıkarma Onay Modal -->
+<div class="modal fade" id="removeCardModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Kartı Sprintten Çıkar</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+            </div>
+            <div class="modal-body">
+                <p>Bu kartı sprintten çıkarmak istediğinize emin misiniz?</p>
+                <input type="hidden" id="removeCardId" />
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-danger" id="confirmRemoveCard">Çıkar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Kart detaylarını görüntüle
+            $('.view-card-btn').click(function () {
+                var cardId = $(this).data('card-id');
+
+                // Kart detay modalını aç
+                $('#cardDetailModal').modal('show');
+
+                // AJAX ile kart detaylarını getir
+                $.ajax({
+                    url: '/Cards/GetCardDetails/' + cardId,
+                    type: 'GET',
+                    success: function (result) {
+                        $('#cardDetailContent').html(result);
+                        if (typeof initCardDetailEvents === 'function') {
+                            setTimeout(function() {
+                                initCardDetailEvents();
+                            }, 100);
+                        }
+                    },
+                    error: function (error) {
+                        $('#cardDetailContent').html('<div class="p-5 text-center text-danger"><i class="bi bi-exclamation-triangle-fill fs-1 mb-3"></i><p>Kart detayları yüklenirken bir hata oluştu.</p></div>');
+                    }
+                });
+            });
+
+            // Kartı sprintten çıkarma butonunu işle
+            $('.remove-from-sprint-btn').click(function () {
+                var cardId = $(this).data('card-id');
+                $('#removeCardId').val(cardId);
+                $('#removeCardModal').modal('show');
+            });
+
+            // Kartı sprintten çıkarma onay butonunu işle
+            $('#confirmRemoveCard').click(function () {
+                var cardId = $('#removeCardId').val();
+
+                if (cardId) {
+                    $.ajax({
+                        url: '/Sprints/RemoveCardFromSprint',
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({
+                            cardId: cardId
+                        }),
+                        success: function () {
+                            // Sayfayı yenile
+                            location.reload();
+                        },
+                        error: function (error) {
+                            alert('Kart çıkarılırken bir hata oluştu: ' + error.responseText);
+                        }
+                    });
+                }
+
+                $('#removeCardModal').modal('hide');
+            });
+        });
+    </script>
+}

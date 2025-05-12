@@ -1,0 +1,70 @@
+﻿@model TrelloClone.Models.Sprint
+@{
+    ViewData["Title"] = "Sprint Sil";
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">Sprint Sil</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        Bu sprint ve tüm sprint-kart ilişkileri silinecektir. Kartlar silinmeyecek ancak sprint ilişkileri kaldırılacaktır.
+                    </div>
+
+                    <h5 class="mb-3">Silmek istediğiniz sprint:</h5>
+                    <dl class="row">
+                        <dt class="col-sm-3">Sprint Adı:</dt>
+                        <dd class="col-sm-9">@Model.Name</dd>
+
+                        <dt class="col-sm-3">Tarih Aralığı:</dt>
+                        <dd class="col-sm-9">@Model.StartDate.ToString("dd.MM.yyyy") - @Model.EndDate.ToString("dd.MM.yyyy")</dd>
+
+                        <dt class="col-sm-3">Durum:</dt>
+                        <dd class="col-sm-9">
+                            @if (Model.IsActive)
+                            {
+                                <span class="badge bg-success me-2">Aktif Sprint</span>
+                            }
+                            @if (Model.IsCompleted)
+                            {
+                                <span class="badge bg-secondary me-2">Tamamlandı</span>
+                            }
+                        </dd>
+
+                        @if (!string.IsNullOrEmpty(Model.Description))
+                        {
+                            <dt class="col-sm-3">Açıklama:</dt>
+                            <dd class="col-sm-9">@Model.Description</dd>
+                        }
+
+                        @if (!string.IsNullOrEmpty(Model.Goal))
+                        {
+                            <dt class="col-sm-3">Sprint Hedefi:</dt>
+                            <dd class="col-sm-9">@Model.Goal</dd>
+                        }
+
+                        <dt class="col-sm-3">Kart Sayısı:</dt>
+                        <dd class="col-sm-9">@(Model.Cards?.Count ?? 0)</dd>
+                    </dl>
+
+                    <form asp-action="Delete" method="post">
+                        <input type="hidden" asp-for="Id" />
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> İptal
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash"></i> Sprint'i Sil
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

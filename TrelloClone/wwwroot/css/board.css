@@ -1,0 +1,188 @@
+﻿/* wwwroot/css/board.css */
+.board-main {
+    height: calc(100vh - 56px);
+    overflow: hidden;
+}
+
+.board-container {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    background-size: cover;
+    background-position: center;
+}
+
+.board-header {
+    padding: 16px;
+    background-color: rgba(0, 0, 0, 0.2);
+    color: white;
+}
+
+.board-title {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+}
+
+.board-description {
+    font-size: 0.9rem;
+    max-width: 800px;
+    text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+}
+
+.board-lists-container {
+    display: flex;
+    overflow-x: auto;
+    padding: 16px;
+    height: 100%;
+    align-items: flex-start;
+}
+
+.board-list {
+    width: 272px;
+    flex: 0 0 auto;
+    margin-right: 16px;
+    background-color: #ebecf0;
+    border-radius: 3px;
+    max-height: calc(100% - 8px);
+    display: flex;
+    flex-direction: column;
+}
+
+.board-list-header {
+    padding: 12px 8px 8px 12px;
+    font-weight: 600;
+}
+
+.board-list-cards {
+    overflow-y: auto;
+    padding: 0 8px;
+    flex: 1;
+    min-height: 10px;
+}
+
+.board-card {
+    cursor: pointer;
+    position: relative;
+}
+
+    .board-card:hover {
+        background-color: #f5f5f5;
+    }
+
+.card-cover {
+    height: 32px;
+    border-radius: 3px 3px 0 0;
+    background-size: cover;
+    background-position: center;
+}
+
+.card-title {
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.card-members {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+}
+
+.card-member-avatar {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.add-card-placeholder {
+    padding: 8px;
+    color: #5e6c84;
+    cursor: pointer;
+    border-radius: 3px;
+}
+
+    .add-card-placeholder:hover {
+        background-color: rgba(0, 0, 0, 0.08);
+        color: #172b4d;
+    }
+
+.add-list-form {
+    background-color: rgba(255, 255, 255, 0.3);
+    width: 272px;
+    flex: 0 0 auto;
+    border-radius: 3px;
+    padding: 0;
+    height: auto;
+    max-height: 100%;
+}
+
+    .add-list-form .card {
+        background-color: rgba(255, 255, 255, 0.95);
+    }
+
+/* Scrollbar için özel stil */
+.board-lists-container::-webkit-scrollbar {
+    height: 10px;
+}
+
+.board-lists-container::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
+}
+
+.board-lists-container::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 5px;
+}
+
+    .board-lists-container::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.7);
+    }
+
+.board-list-cards::-webkit-scrollbar {
+    width: 8px;
+}
+
+.board-list-cards::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+}
+
+.board-list-cards::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 4px;
+}
+
+    .board-list-cards::-webkit-scrollbar-thumb:hover {
+        background: rgba(0, 0, 0, 0.25);
+    }
+
+/* Responsive için düzenlemeler */
+@media (max-width: 768px) {
+    .board-header {
+        padding: 8px 12px;
+    }
+
+    .board-lists-container {
+        padding: 8px;
+    }
+
+    .board-title {
+        font-size: 1.25rem;
+    }
+
+    .board-description {
+        font-size: 0.8rem;
+    }
+
+    .board-actions .btn-group {
+        flex-wrap: wrap;
+    }
+}
