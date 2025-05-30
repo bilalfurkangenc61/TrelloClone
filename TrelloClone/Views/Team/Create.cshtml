@@ -1,0 +1,104 @@
+﻿@model CreateTeamViewModel
+@{
+    ViewData["Title"] = "Yeni Takım Oluştur";
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card card-trello">
+                <div class="card-header bg-white">
+                    <h4 class="card-title fw-bold mb-0">
+                        <i class="fas fa-users text-primary me-2"></i>
+                        Yeni Takım Oluştur
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Create" method="post">
+                        <div asp-validation-summary="All" class="alert alert-danger d-none"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="Name" class="form-label">
+                                <i class="fas fa-tag me-1"></i>
+                                Takım Adı
+                            </label>
+                            <input asp-for="Name" class="form-control form-control-lg"
+                                   placeholder="Örn: Web Geliştirme Takımı" required>
+                            <span asp-validation-for="Name" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="Description" class="form-label">
+                                <i class="fas fa-align-left me-1"></i>
+                                Açıklama
+                            </label>
+                            <textarea asp-for="Description" class="form-control" rows="4"
+                                      placeholder="Takımınız hakkında kısa bir açıklama yazın..."></textarea>
+                            <span asp-validation-for="Description" class="text-danger"></span>
+                            <div class="form-text">Bu alan opsiyoneldir.</div>
+                        </div>
+
+                        <div class="d-flex gap-3">
+                            <button type="submit" class="btn btn-trello-primary btn-lg">
+                                <i class="fas fa-plus me-2"></i>
+                                Takım Oluştur
+                            </button>
+                            <a href="@Url.Action("Index")" class="btn btn-outline-secondary btn-lg">
+                                <i class="fas fa-arrow-left me-2"></i>
+                                Geri Dön
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Takım Hakkında Bilgiler -->
+            <div class="card card-trello mt-4">
+                <div class="card-body">
+                    <h6 class="fw-bold mb-3">
+                        <i class="fas fa-lightbulb text-warning me-2"></i>
+                        İpuçları
+                    </h6>
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div class="d-flex">
+                                <i class="fas fa-check-circle text-success me-2 mt-1"></i>
+                                <small>Açık ve anlaşılır bir takım adı seçin</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="d-flex">
+                                <i class="fas fa-check-circle text-success me-2 mt-1"></i>
+                                <small>Takım amacını açıklamaya yazın</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="d-flex">
+                                <i class="fas fa-check-circle text-success me-2 mt-1"></i>
+                                <small>Takım oluşturduktan sonra üye ekleyebilirsiniz</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="d-flex">
+                                <i class="fas fa-check-circle text-success me-2 mt-1"></i>
+                                <small>Admin olarak tüm yetkilere sahip olacaksınız</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Validation summary göster/gizle
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <text>
+                document.querySelector('.alert-danger').classList.remove('d-none');
+            </text>
+        }
+    </script>
+}

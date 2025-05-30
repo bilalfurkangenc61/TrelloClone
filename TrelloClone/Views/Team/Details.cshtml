@@ -1,0 +1,376 @@
+﻿@model Team
+@{
+    ViewData["Title"] = Model.Name;
+    var currentUserRole = (UserRole)ViewBag.UserRole;
+    var currentUserId = (string)ViewBag.CurrentUserId;
+}
+
+<div class="container-fluid">
+    <!-- Takım Başlığı -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="team-header p-4 rounded">
+                <div class="d-flex justify-content-between align-items-start flex-wrap">
+                    <div>
+                        <h2 class="fw-bold text-white mb-2">
+                            <i class="fas fa-users me-2"></i>
+                            @Model.Name
+                        </h2>
+                        @if (!string.IsNullOrEmpty(Model.Description))
+                        {
+                            <p class="text-white-50 mb-0">@Model.Description</p>
+                        }
+                        <small class="text-white-50">
+                            <i class="fas fa-calendar me-1"></i>
+                            @Model.CreatedAt.ToString("dd.MM.yyyy") tarihinde oluşturuldu
+                        </small>
+                    </div>
+                    
+                    @if (currentUserRole == UserRole.Admin)
+                    {
+                        <div class="d-flex gap-2">
+                            <a href="@Url.Action("Edit", new { id = Model.Id })" class="btn btn-light">
+                                <i class="fas fa-edit me-1"></i>
+                                Düzenle
+                            </a>
+                            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addMemberModal">
+                                <i class="fas fa-user-plus me-1"></i>
+                                Üye Ekle
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Sol Taraf - Takım Üyeleri -->
+        <div class="col-lg-8 mb-4">
+            <div class="card card-trello">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-users text-primary me-2"></i>
+                        Takım Üyeleri (@Model.Members.Count(m => m.IsActive))
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        @foreach (var member in Model.Members.Where(m => m.IsActive).OrderBy(m => m.Role))
+                        {
+                            <div class="col-md-6">
+                                <div class="member-card p-3 rounded border">
+                                    <div class="d-flex align-items-center">
+                                        <!-- Avatar -->
+                                        <div class="member-avatar me-3">
+                                            @if (!string.IsNullOrEmpty(member.User.ProfilePicture))
+                                            {
+                                                <img src="@member.User.ProfilePicture" alt="@member.User.FirstName" 
+                                                     class="rounded-circle" width="50" height="50">
+                                            }
+                                            else
+                                            {
+                                                <div class="avatar-placeholder rounded-circle d-flex align-items-center justify-content-center">
+                                                    @member.User.FirstName.Substring(0, 1).ToUpper()@member.User.LastName.Substring(0, 1).ToUpper()
+                                                </div>
+                                            }
+                                        </div>
+                                        
+                                        <!-- Üye Bilgileri -->
+                                        <div class="flex-grow-1">
+                                            <h6 class="fw-bold mb-1">
+                                                @member.User.FirstName @member.User.LastName
+                                                @if (member.UserId == currentUserId)
+                                                {
+                                                    <span class="badge bg-info ms-1">Siz</span>
+                                                }
+                                            </h6>
+                                            <p class="text-muted small mb-1">@member.User.Email</p>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <span class="badge bg-@(member.Role == UserRole.Admin ? "danger" : member.Role == UserRole.Member ? "primary" : "secondary")">
+                                                    @(member.Role == UserRole.Admin ? "Admin" : 
+                                                      member.Role == UserRole.Member ? "Üye" : "Misafir")
+                                                </span>
+                                                <small class="text-muted">
+                                                    @member.JoinedAt.ToString("dd.MM.yyyy")
+                                                </small>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Eylemler -->
+                                        @if (currentUserRole == UserRole.Admin && member.UserId != currentUserId)
+                                        {
+                                            <div class="dropdown">
+                                                <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="dropdown">
+                                                    <i class="fas fa-ellipsis-v"></i>
+                                                </button>
+                                                <ul class="dropdown-menu">
+                                                    <li><h6 class="dropdown-header">Rol Değiştir</h6></li>
+                                                    @if (member.Role != UserRole.Admin)
+                                                    {
+                                                        <li><a class="dropdown-item" href="#" onclick="updateRole('@member.UserId', '@UserRole.Admin')">
+                                                            <i class="fas fa-crown me-2"></i>Admin Yap
+                                                        </a></li>
+                                                    }
+                                                    @if (member.Role != UserRole.Member)
+                                                    {
+                                                        <li><a class="dropdown-item" href="#" onclick="updateRole('@member.UserId', '@UserRole.Member')">
+                                                            <i class="fas fa-user me-2"></i>Üye Yap
+                                                        </a></li>
+                                                    }
+                                                    @if (member.Role != UserRole.Guest)
+                                                    {
+                                                        <li><a class="dropdown-item" href="#" onclick="updateRole('@member.UserId', '@UserRole.Guest')">
+                                                            <i class="fas fa-eye me-2"></i>Misafir Yap
+                                                        </a></li>
+                                                    }
+                                                    <li><hr class="dropdown-divider"></li>
+                                                    <li><a class="dropdown-item text-danger" href="#" onclick="removeMember('@member.UserId', '@member.User.FirstName @member.User.LastName')">
+                                                        <i class="fas fa-user-times me-2"></i>Takımdan Çıkar
+                                                    </a></li>
+                                                </ul>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sağ Taraf - Panolar ve İstatistikler -->
+        <div class="col-lg-4">
+            <!-- İstatistikler -->
+            <div class="card card-trello mb-4">
+                <div class="card-header bg-white">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-chart-bar text-success me-2"></i>
+                        İstatistikler
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3 text-center">
+                        <div class="col-6">
+                            <div class="stat-item p-3 rounded" style="background-color: var(--trello-blue-light);">
+                                <h4 class="fw-bold text-primary mb-0">@Model.Members.Count(m => m.IsActive)</h4>
+                                <small class="text-muted">Aktif Üye</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-item p-3 rounded" style="background-color: var(--trello-blue-light);">
+                                <h4 class="fw-bold text-success mb-0">@Model.Boards.Count</h4>
+                                <small class="text-muted">Pano</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-item p-3 rounded" style="background-color: var(--trello-blue-light);">
+                                <h4 class="fw-bold text-warning mb-0">@Model.Boards.SelectMany(b => b.Lists).SelectMany(l => l.Cards).Count()</h4>
+                                <small class="text-muted">Toplam Kart</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-item p-3 rounded" style="background-color: var(--trello-blue-light);">
+                                <h4 class="fw-bold text-info mb-0">@Model.Members.Count(m => m.Role == UserRole.Admin && m.IsActive)</h4>
+                                <small class="text-muted">Admin</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panolar -->
+            <div class="card card-trello">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-columns text-success me-2"></i>
+                        Panolar
+                    </h6>
+                    @if (currentUserRole != UserRole.Guest)
+                    {
+                        <button class="btn btn-outline-success btn-sm" onclick="alert('Board oluşturma yakında!')">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    }
+                </div>
+                <div class="card-body">
+                    @if (Model.Boards.Any())
+                    {
+                        @foreach (var board in Model.Boards.Take(5))
+                        {
+                            <div class="board-item mb-2 p-2 rounded border" style="border-left: 4px solid @board.BackgroundColor !important;">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="fw-bold mb-0">@board.Name</h6>
+                                        <small class="text-muted">@board.Lists.Count liste</small>
+                                    </div>
+                                    <small class="text-muted">
+                                        @board.CreatedAt.ToString("dd.MM")
+                                    </small>
+                                </div>
+                            </div>
+                        }
+                        @if (Model.Boards.Count > 5)
+                        {
+                            <div class="text-center mt-3">
+                                <a href="#" class="text-decoration-none small">+@(Model.Boards.Count - 5) pano daha</a>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-center py-3">
+                            <i class="fas fa-columns fa-2x text-muted mb-2"></i>
+                            <p class="text-muted small mb-0">Henüz pano yok</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Üye Ekleme Modalı -->
+@if (currentUserRole == UserRole.Admin)
+{
+    <div class="modal fade" id="addMemberModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-user-plus me-2"></i>
+                        Yeni Üye Ekle
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addMemberForm">
+                        <div class="mb-3">
+                            <label for="memberEmail" class="form-label">E-posta Adresi</label>
+                            <input type="email" class="form-control" id="memberEmail" 
+                                   placeholder="ornek@email.com" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="memberRole" class="form-label">Rol</label>
+                            <select class="form-select" id="memberRole">
+                                <option value="@UserRole.Member">Üye</option>
+                                <option value="@UserRole.Admin">Admin</option>
+                                <option value="@UserRole.Guest">Misafir</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="button" class="btn btn-trello-primary" onclick="addMember()">
+                        <i class="fas fa-plus me-1"></i>
+                        Üye Ekle
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        // Üye ekleme
+        function addMember() {
+            const email = document.getElementById('memberEmail').value;
+            const role = document.getElementById('memberRole').value;
+            
+            if (!email) {
+                alert('E-posta adresi gerekli!');
+                return;
+            }
+            
+            fetch('@Url.Action("AddMember")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                },
+                body: `teamId=@Model.Id&email=${email}&role=${role}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert(data.message);
+                }
+            });
+        }
+        
+        // Rol güncelleme
+        function updateRole(userId, newRole) {
+            if (confirm('Bu üyenin rolünü değiştirmek istediğinizden emin misiniz?')) {
+                fetch('@Url.Action("UpdateMemberRole")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: `teamId=@Model.Id&userId=${userId}&newRole=${newRole}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                    if (data.success) location.reload();
+                });
+            }
+        }
+        
+        // Üye çıkarma
+        function removeMember(userId, userName) {
+            if (confirm(`${userName} isimli üyeyi takımdan çıkarmak istediğinizden emin misiniz?`)) {
+                fetch('@Url.Action("RemoveMember")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: `teamId=@Model.Id&userId=${userId}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                    if (data.success) location.reload();
+                });
+            }
+        }
+    </script>
+}
+
+<style>
+    .team-header {
+        background: linear-gradient(135deg, var(--trello-blue), var(--trello-blue-dark));
+    }
+    
+    .member-card {
+        transition: all 0.3s ease;
+    }
+    
+    .member-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    .avatar-placeholder {
+        width: 50px;
+        height: 50px;
+        background-color: var(--trello-blue);
+        color: white;
+        font-size: 16px;
+        font-weight: 600;
+    }
+    
+    .board-item {
+        transition: all 0.2s ease;
+    }
+    
+    .board-item:hover {
+        background-color: var(--trello-gray);
+        cursor: pointer;
+    }
+</style>

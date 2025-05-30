@@ -1,0 +1,601 @@
+﻿@model List<Sprint>
+@{
+    ViewData["Title"] = "Sprint Yönetimi";
+    var board = (Board)ViewBag.Board;
+}
+
+<!-- Sprint Yönetimi Ana Sayfası -->
+<div class="container-fluid py-4">
+    <!-- Sayfa Başlığı -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="@Url.Action("Index", "Board")">
+                            <i class="fas fa-columns me-1"></i>
+                            Panolarım
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="@Url.Action("Details", "Board", new { id = board.Id })">
+                            @board.Name
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active">Sprint Yönetimi</li>
+                </ol>
+            </nav>
+            <h2 class="fw-bold text-trello-dark mb-1">
+                <i class="fas fa-rocket me-2 text-primary"></i>
+                Sprint Yönetimi
+            </h2>
+            <p class="text-muted mb-0">@board.Name panosundaki sprint'lerinizi yönetin</p>
+        </div>
+        <div>
+            <a href="@Url.Action("Create", new { boardId = board.Id })" class="btn btn-trello-primary">
+                <i class="fas fa-plus me-2"></i>
+                Yeni Sprint Oluştur
+            </a>
+        </div>
+    </div>
+
+    @if (Model.Any())
+    {
+        <!-- Sprint Kartları -->
+        <div class="row g-4">
+            @foreach (var sprint in Model)
+            {
+                <div class="col-lg-6 col-xl-4">
+                    <div class="card card-trello h-100 sprint-card">
+                        <div class="card-header border-0 pb-0">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <h5 class="card-title mb-1 fw-bold">
+                                        <a href="@Url.Action("Details", new { id = sprint.Id })"
+                                           class="text-decoration-none text-trello-dark">
+                                            @sprint.Name
+                                        </a>
+                                    </h5>
+                                    @if (!string.IsNullOrEmpty(sprint.Description))
+                                    {
+                                        <p class="text-muted small mb-2">@sprint.Description</p>
+                                    }
+                                </div>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-ghost" data-bs-toggle="dropdown">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li>
+                                            <a class="dropdown-item" href="@Url.Action("Details", new { id = sprint.Id })">
+                                                <i class="fas fa-eye me-2"></i>Detayları Görüntüle
+                                            </a>
+                                        </li>
+                                        @if (sprint.Status == SprintStatus.Planning || sprint.Status == SprintStatus.Active)
+                                        {
+                                            <li>
+                                                <a class="dropdown-item" href="@Url.Action("Edit", new { id = sprint.Id })">
+                                                    <i class="fas fa-edit me-2"></i>Düzenle
+                                                </a>
+                                            </li>
+                                        }
+                                        @if (sprint.Status == SprintStatus.Planning)
+                                        {
+                                            <li>
+                                                <a class="dropdown-item sprint-action" href="#"
+                                                   onclick="startSprint(@sprint.Id)">
+                                                    <i class="fas fa-play me-2 text-success"></i>Sprint'i Başlat
+                                                </a>
+                                            </li>
+                                        }
+                                        @if (sprint.Status == SprintStatus.Active)
+                                        {
+                                            <li>
+                                                <a class="dropdown-item sprint-action" href="#"
+                                                   onclick="completeSprint(@sprint.Id)">
+                                                    <i class="fas fa-check me-2 text-primary"></i>Sprint'i Tamamla
+                                                </a>
+                                            </li>
+                                        }
+                                        @if (sprint.Status == SprintStatus.Completed)
+                                        {
+                                            <li>
+                                                <a class="dropdown-item" href="@Url.Action("Report", new { id = sprint.Id })">
+                                                    <i class="fas fa-chart-bar me-2 text-info"></i>Sprint Raporu
+                                                </a>
+                                            </li>
+                                        }
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card-body pt-2">
+                            <!-- Sprint Durumu -->
+                            <div class="mb-3">
+                                <span class="badge @GetStatusBadgeClass(sprint.Status) fs-6">
+                                    <i class="fas @GetStatusIcon(sprint.Status) me-1"></i>
+                                    @GetStatusDisplayName(sprint.Status)
+                                </span>
+                            </div>
+
+                            <!-- Sprint Tarihleri -->
+                            <div class="sprint-dates mb-3">
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <small class="text-muted d-block">Başlangıç</small>
+                                        <span class="fw-medium">@sprint.StartDate.ToString("dd.MM.yyyy")</span>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted d-block">Bitiş</small>
+                                        <span class="fw-medium">@sprint.EndDate.ToString("dd.MM.yyyy")</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Sprint İstatistikleri - NULL SAFE -->
+                            <div class="sprint-stats mb-3">
+                                @{
+                                    var totalCards = sprint.CardSprints?.Count ?? 0;
+                                    var completedCards = 0;
+                                    var progressPercentage = 0;
+
+                                    if (sprint.CardSprints != null && sprint.CardSprints.Any())
+                                    {
+                                        completedCards = sprint.CardSprints.Count(cs =>
+                                        cs.Card?.List?.Name?.ToLower()?.Contains("tamamla") == true ||
+                                        cs.Card?.List?.Name?.ToLower()?.Contains("done") == true ||
+                                        cs.Card?.List?.Name?.ToLower()?.Contains("finish") == true);
+                                        progressPercentage = totalCards > 0 ? (completedCards * 100 / totalCards) : 0;
+                                    }
+                                }
+
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <small class="text-muted">İlerleme</small>
+                                    <small class="fw-medium">@completedCards/@totalCards kart</small>
+                                </div>
+
+                                <div class="progress mb-2" style="height: 8px;">
+                                    <div class="progress-bar bg-success"
+                                         style="width: @progressPercentage%"
+                                         aria-valuenow="@progressPercentage"
+                                         aria-valuemin="0"
+                                         aria-valuemax="100">
+                                    </div>
+                                </div>
+
+                                <div class="d-flex justify-content-between">
+                                    <small class="text-success">
+                                        <i class="fas fa-check-circle me-1"></i>
+                                        %@progressPercentage tamamlandı
+                                    </small>
+                                    @if (sprint.Status == SprintStatus.Active)
+                                    {
+                                        var daysRemaining = (sprint.EndDate - DateTime.Today).Days;
+                                        <small class="@(daysRemaining <= 3 ? "text-danger" : "text-muted")">
+                                            <i class="fas fa-clock me-1"></i>
+                                            @Math.Max(0, daysRemaining) gün kaldı
+                                        </small>
+                                    }
+                                </div>
+                            </div>
+
+                            <!-- Sprint Kart Özeti - NULL SAFE -->
+                            @if (totalCards > 0)
+                            {
+                                <div class="sprint-cards-summary">
+                                    <small class="text-muted d-block mb-1">Kart Dağılımı</small>
+                                    <div class="row g-1 text-center">
+                                        @{
+                                            var todoCards = 0;
+                                            var inProgressCards = 0;
+
+                                            if (sprint.CardSprints != null)
+                                            {
+                                                todoCards = sprint.CardSprints.Count(cs =>
+                                                cs.Card?.List?.Name?.ToLower()?.Contains("yapılacak") == true ||
+                                                cs.Card?.List?.Name?.ToLower()?.Contains("todo") == true ||
+                                                cs.Card?.List?.Name?.ToLower()?.Contains("backlog") == true);
+
+                                                inProgressCards = sprint.CardSprints.Count(cs =>
+                                                cs.Card?.List?.Name?.ToLower()?.Contains("devam") == true ||
+                                                cs.Card?.List?.Name?.ToLower()?.Contains("progress") == true ||
+                                                cs.Card?.List?.Name?.ToLower()?.Contains("doing") == true);
+                                            }
+                                        }
+                                        <div class="col-4">
+                                            <div class="card-summary-item">
+                                                <div class="fw-bold text-warning">@todoCards</div>
+                                                <small class="text-muted">Yapılacak</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="card-summary-item">
+                                                <div class="fw-bold text-info">@inProgressCards</div>
+                                                <small class="text-muted">Devam Eden</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="card-summary-item">
+                                                <div class="fw-bold text-success">@completedCards</div>
+                                                <small class="text-muted">Tamamlanan</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="card-footer bg-transparent border-0 pt-0">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    <i class="fas fa-user me-1"></i>
+                                    @(sprint.CreatedByUser?.FirstName ?? "Bilinmeyen") @(sprint.CreatedByUser?.LastName ?? "")
+                                </small>
+                                <small class="text-muted">
+                                    @sprint.CreatedAt.ToString("dd.MM.yyyy")
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Sprint Özet İstatistikleri - NULL SAFE -->
+        <div class="row mt-5">
+            <div class="col-12">
+                <div class="card card-trello">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-chart-pie me-2 text-primary"></i>
+                            Sprint Özet İstatistikleri
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            @{
+                                var totalSprints = Model.Count;
+                                var activeSprints = Model.Count(s => s.Status == SprintStatus.Active);
+                                var completedSprints = Model.Count(s => s.Status == SprintStatus.Completed);
+                                var planningSprints = Model.Count(s => s.Status == SprintStatus.Planning);
+                                var totalCardsInSprints = Model.Where(s => s.CardSprints != null).SelectMany(s => s.CardSprints).Count();
+                            }
+
+                            <div class="col-md-3">
+                                <div class="text-center p-3 border rounded">
+                                    <h3 class="text-primary mb-1">@totalSprints</h3>
+                                    <small class="text-muted">Toplam Sprint</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center p-3 border rounded">
+                                    <h3 class="text-success mb-1">@activeSprints</h3>
+                                    <small class="text-muted">Aktif Sprint</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center p-3 border rounded">
+                                    <h3 class="text-info mb-1">@completedSprints</h3>
+                                    <small class="text-muted">Tamamlanan Sprint</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center p-3 border rounded">
+                                    <h3 class="text-warning mb-1">@totalCardsInSprints</h3>
+                                    <small class="text-muted">Toplam Kart</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Boş Durum -->
+        <div class="empty-state py-5">
+            <div class="text-center">
+                <div class="empty-icon mb-4">
+                    <i class="fas fa-rocket fa-5x text-muted opacity-50"></i>
+                </div>
+                <h3 class="fw-bold text-trello-dark mb-3">Henüz sprint oluşturulmamış</h3>
+                <p class="text-muted mb-4 fs-5">
+                    Agile metodoloji ile projelerinizi sprint'lere bölerek daha etkili yönetin
+                </p>
+
+                <div class="d-flex flex-column flex-sm-row gap-3 justify-content-center">
+                    <a href="@Url.Action("Create", new { boardId = board.Id })" class="btn btn-trello-primary btn-lg">
+                        <i class="fas fa-plus me-2"></i>
+                        İlk Sprint'inizi Oluşturun
+                    </a>
+                    <button class="btn btn-outline-secondary btn-lg" data-bs-toggle="modal" data-bs-target="#sprintInfoModal">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Sprint Nedir?
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Sprint Bilgi Modal'ı -->
+<div class="modal fade" id="sprintInfoModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-rocket me-2"></i>
+                    Sprint Nedir?
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="d-flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-clock fa-2x text-primary"></i>
+                            </div>
+                            <div class="ms-3">
+                                <h6 class="fw-bold">Zaman Kutulu Çalışma</h6>
+                                <p class="text-muted mb-0">
+                                    Sprint'ler genellikle 1-4 hafta arası süren, sabit zaman periyotlarıdır.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-target fa-2x text-success"></i>
+                            </div>
+                            <div class="ms-3">
+                                <h6 class="fw-bold">Hedef Odaklı</h6>
+                                <p class="text-muted mb-0">
+                                    Her sprint'in belirli bir hedefi ve teslim edilebilir çıktısı vardır.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-sync fa-2x text-info"></i>
+                            </div>
+                            <div class="ms-3">
+                                <h6 class="fw-bold">İteratif Süreç</h6>
+                                <p class="text-muted mb-0">
+                                    Her sprint sonunda değerlendirme yapılır ve sonraki sprint planlanır.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-users fa-2x text-warning"></i>
+                            </div>
+                            <div class="ms-3">
+                                <h6 class="fw-bold">Takım Çalışması</h6>
+                                <p class="text-muted mb-0">
+                                    Tüm takım üyeleri sprint hedefine ulaşmak için birlikte çalışır.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                <a href="@Url.Action("Create", new { boardId = board.Id })" class="btn btn-trello-primary">
+                    Sprint Oluştur
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Sprint başlatma
+        function startSprint(sprintId) {
+            if (confirm('Bu sprint\'i başlatmak istediğinizden emin misiniz?')) {
+                fetch('@Url.Action("StartSprint", "Sprint")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `id=${sprintId}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification(data.message, 'success');
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        showNotification(data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    showNotification('Bir hata oluştu', 'error');
+                    console.error('Error:', error);
+                });
+            }
+        }
+
+        // Sprint tamamlama
+        function completeSprint(sprintId) {
+            if (confirm('Bu sprint\'i tamamlamak istediğinizden emin misiniz?')) {
+                fetch('@Url.Action("CompleteSprint", "Sprint")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `id=${sprintId}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification(data.message, 'success');
+                        if (data.report) {
+                            setTimeout(() => {
+                                showSprintReport(data.report);
+                            }, 1000);
+                        }
+                        setTimeout(() => location.reload(), 2000);
+                    } else {
+                        showNotification(data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    showNotification('Bir hata oluştu', 'error');
+                    console.error('Error:', error);
+                });
+            }
+        }
+
+        // Sprint raporu gösterimi
+        function showSprintReport(report) {
+            const message = `Sprint Tamamlandı!\n\nToplam Kart: ${report.totalCards}\nTamamlanan: ${report.completedCards}\nTamamlanma Oranı: %${report.completionRate}`;
+            alert(message);
+        }
+
+        // Bildirim gösterimi
+        function showNotification(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `alert alert-${type === 'error' ? 'danger' : type === 'success' ? 'success' : 'info'} position-fixed`;
+            toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            toast.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center">
+                    <span>${message}</span>
+                    <button type="button" class="btn-close" onclick="this.parentElement.parentElement.remove()"></button>
+                </div>
+            `;
+
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                if (toast.parentElement) {
+                    toast.remove();
+                }
+            }, 3000);
+        }
+    </script>
+}
+
+<style>
+    .sprint-card {
+        transition: all 0.3s ease;
+    }
+
+        .sprint-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+    .card-summary-item {
+        padding: 0.5rem;
+    }
+
+    .sprint-dates {
+        border-left: 3px solid var(--trello-blue);
+        padding-left: 1rem;
+        background: rgba(0, 121, 191, 0.05);
+        border-radius: 0 8px 8px 0;
+    }
+
+    .sprint-stats .progress {
+        border-radius: 10px;
+    }
+
+    .btn-ghost {
+        background: transparent;
+        border: none;
+        color: #666;
+        padding: 0.25rem 0.5rem;
+    }
+
+        .btn-ghost:hover {
+            background: rgba(0,0,0,0.1);
+            color: #333;
+        }
+
+    /* Boş durum animasyonu */
+    .empty-icon {
+        animation: float 3s ease-in-out infinite;
+    }
+
+    @@keyframes float {
+        0%, 100%
+
+    {
+        transform: translateY(0px);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+
+    }
+
+    /* Trello tarzı renkler */
+    .text-trello-dark {
+        color: #172b4d !important;
+    }
+
+    .btn-trello-primary {
+        background-color: #0079bf;
+        border-color: #0079bf;
+        color: white;
+    }
+
+        .btn-trello-primary:hover {
+            background-color: #005a8b;
+            border-color: #005a8b;
+        }
+
+    .card-trello {
+        border: none;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+</style>
+
+@functions {
+    string GetStatusBadgeClass(SprintStatus status)
+    {
+        return status switch
+        {
+            SprintStatus.Planning => "bg-warning",
+            SprintStatus.Active => "bg-success",
+            SprintStatus.Completed => "bg-primary",
+            SprintStatus.Cancelled => "bg-danger",
+            _ => "bg-secondary"
+        };
+    }
+
+    string GetStatusIcon(SprintStatus status)
+    {
+        return status switch
+        {
+            SprintStatus.Planning => "fa-clock",
+            SprintStatus.Active => "fa-play",
+            SprintStatus.Completed => "fa-check",
+            SprintStatus.Cancelled => "fa-times",
+            _ => "fa-question"
+        };
+    }
+
+    string GetStatusDisplayName(SprintStatus status)
+    {
+        return status switch
+        {
+            SprintStatus.Planning => "Planlama",
+            SprintStatus.Active => "Aktif",
+            SprintStatus.Completed => "Tamamlandı",
+            SprintStatus.Cancelled => "İptal Edildi",
+            _ => "Bilinmeyen"
+        };
+    }
+}

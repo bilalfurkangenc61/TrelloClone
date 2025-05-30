@@ -1,0 +1,1864 @@
+﻿@model Board
+@{
+    ViewData["Title"] = Model.Name;
+    var currentUserId = (string)ViewBag.CurrentUserId;
+    var teamMembers = (List<TeamMember>)ViewBag.TeamMembers;
+}
+
+<!-- Ana Trello Board Görünümü -->
+<div class="board-container" style="background-color: @Model.BackgroundColor;">
+    <!-- Board Header -->
+    <div class="board-header">
+        <div class="container-fluid">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <h4 class="fw-bold text-white mb-0 me-3">@Model.Name</h4>
+                    <span class="badge bg-white bg-opacity-25 text-white">@Model.Team.Name</span>
+                </div>
+
+                <div class="d-flex align-items-center gap-2">
+                    <!-- Takım Üyeleri -->
+                    <div class="team-avatars d-flex">
+                        @foreach (var member in teamMembers.Take(5))
+                        {
+                            <div class="avatar-sm" title="@member.User.FirstName @member.User.LastName">
+                                @if (!string.IsNullOrEmpty(member.User.ProfilePicture))
+                                {
+                                    <img src="@member.User.ProfilePicture" alt="@member.User.FirstName" class="rounded-circle">
+                                }
+                                else
+                                {
+                                    <div class="avatar-placeholder">
+                                        @member.User.FirstName.Substring(0, 1).ToUpper()
+                                    </div>
+                                }
+                            </div>
+                        }
+                        @if (teamMembers.Count > 5)
+                        {
+                            <div class="avatar-sm">
+                                <div class="avatar-placeholder">+@(teamMembers.Count - 5)</div>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Board Menüsü -->
+                    <div class="dropdown">
+                        <button class="btn btn-white btn-sm" data-bs-toggle="dropdown">
+                            <i class="fas fa-ellipsis-h"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><h6 class="dropdown-header">Pano İşlemleri</h6></li>
+                            <li>
+                                <a class="dropdown-item" href="@Url.Action("Edit", new { id = Model.Id })">
+                                    <i class="fas fa-edit me-2"></i>Pano Ayarları
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="#" onclick="addList()">
+                                    <i class="fas fa-plus me-2"></i>Liste Ekle
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="@Url.Action("Index")">
+                                    <i class="fas fa-arrow-left me-2"></i>Panolara Dön
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Board Content -->
+    <div class="board-content">
+        <div class="container-fluid">
+            <div class="lists-container">
+                @if (Model.Lists.Any())
+                {
+                    @foreach (var list in Model.Lists.OrderBy(l => l.Position))
+                    {
+                        <div class="list-column" data-list-id="@list.Id">
+                            <!-- Liste Başlığı -->
+                            <div class="list-header">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h6 class="fw-bold mb-0 list-title">@list.Name</h6>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-ghost" data-bs-toggle="dropdown">
+                                            <i class="fas fa-ellipsis-h"></i>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li>
+                                                <a class="dropdown-item" href="#" onclick="addCard(@list.Id)">
+                                                    <i class="fas fa-plus me-2"></i>Kart Ekle
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item list-edit-btn" href="#"
+                                                   data-list-id="@list.Id"
+                                                   data-list-name="@list.Name">
+                                                    <i class="fas fa-edit me-2"></i>Liste Düzenle
+                                                </a>
+                                            </li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li>
+                                                <a class="dropdown-item text-danger list-archive-btn" href="#"
+                                                   data-list-id="@list.Id">
+                                                    <i class="fas fa-archive me-2"></i>Listeyi Arşivle
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Kartlar -->
+                            <div class="cards-container" data-list-id="@list.Id">
+                                @if (list.Cards.Any(c => !c.IsArchived))
+                                {
+                                    @foreach (var card in list.Cards.Where(c => !c.IsArchived).OrderBy(c => c.Position))
+                                    {
+                                        <div class="card-item" data-card-id="@card.Id" draggable="true">
+                                            <div class="card-content">
+                                                <!-- Kart Etiketleri -->
+                                                @if (card.Labels.Any())
+                                                {
+                                                    <div class="card-labels mb-2">
+                                                        @foreach (var cardLabel in card.Labels)
+                                                        {
+                                                            <span class="badge label-badge" style="background-color: @cardLabel.Label.Color;">
+                                                                @cardLabel.Label.Name
+                                                            </span>
+                                                        }
+                                                    </div>
+                                                }
+
+                                                <!-- Kart Başlığı -->
+                                                <div class="card-title">@card.Title</div>
+
+                                                <!-- Kart Detayları -->
+                                                <div class="card-footer d-flex justify-content-between align-items-center">
+                                                    <div class="card-icons">
+                                                        @if (card.DueDate.HasValue)
+                                                        {
+                                                            <span class="card-icon @(card.DueDate < DateTime.Now ? "text-danger" : "text-muted")"
+                                                                  title="Son Tarih: @card.DueDate.Value.ToString("dd.MM.yyyy")">
+                                                                <i class="fas fa-clock"></i>
+                                                                @card.DueDate.Value.ToString("dd.MM")
+                                                            </span>
+                                                        }
+                                                        @if (card.Comments.Any())
+                                                        {
+                                                            <span class="card-icon text-muted" title="@card.Comments.Count Yorum">
+                                                                <i class="fas fa-comment"></i>
+                                                                @card.Comments.Count
+                                                            </span>
+                                                        }
+                                                        @if (card.Checklists.Any())
+                                                        {
+                                                            var totalItems = card.Checklists.SelectMany(cl => cl.Items).Count();
+                                                            var completedItems = card.Checklists.SelectMany(cl => cl.Items).Count(i => i.IsCompleted);
+                                                            <span class="card-icon @(completedItems == totalItems && totalItems > 0 ? "text-success" : "text-muted")"
+                                                                  title="Kontrol Listesi: @completedItems/@totalItems">
+                                                                <i class="fas fa-check-square"></i>
+                                                                @completedItems/@totalItems
+                                                            </span>
+                                                        }
+                                                        @if (card.Attachments.Any())
+                                                        {
+                                                            <span class="card-icon text-muted" title="@card.Attachments.Count Dosya">
+                                                                <i class="fas fa-paperclip"></i>
+                                                                @card.Attachments.Count
+                                                            </span>
+                                                        }
+                                                    </div>
+
+                                                    <!-- Atanan Kişiler -->
+                                                    @if (card.Assignments.Any())
+                                                    {
+                                                        <div class="assigned-users">
+                                                            @foreach (var assignment in card.Assignments.Take(3))
+                                                            {
+                                                                <div class="avatar-xs" title="@assignment.User.FirstName @assignment.User.LastName">
+                                                                    @if (!string.IsNullOrEmpty(assignment.User.ProfilePicture))
+                                                                    {
+                                                                        <img src="@assignment.User.ProfilePicture" alt="@assignment.User.FirstName" class="rounded-circle">
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        <div class="avatar-placeholder-xs">
+                                                                            @assignment.User.FirstName.Substring(0, 1).ToUpper()
+                                                                        </div>
+                                                                    }
+                                                                </div>
+                                                            }
+                                                            @if (card.Assignments.Count > 3)
+                                                            {
+                                                                <div class="avatar-xs">
+                                                                    <div class="avatar-placeholder-xs">+@(card.Assignments.Count - 3)</div>
+                                                                </div>
+                                                            }
+                                                        </div>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                }
+                                else
+                                {
+                                    <!-- Boş Liste -->
+                                    <div class="empty-list" onclick="addCard(@list.Id)">
+                                        <i class="fas fa-plus-circle text-muted"></i>
+                                        <p class="text-muted mb-0">Kart eklemek için tıklayın</p>
+                                    </div>
+                                }
+                            </div>
+
+                            <!-- Kart Ekleme Butonu -->
+                            <div class="add-card-btn">
+                                <button class="btn btn-light btn-sm w-100" onclick="addCard(@list.Id)">
+                                    <i class="fas fa-plus me-1"></i>
+                                    Kart Ekle
+                                </button>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <!-- Boş Pano -->
+                    <div class="empty-board">
+                        <div class="text-center text-white">
+                            <i class="fas fa-columns fa-4x mb-3 opacity-50"></i>
+                            <h5>Bu pano boş</h5>
+                            <p class="opacity-75">İş akışınızı organize etmek için listeler ekleyin</p>
+                            <button class="btn btn-white" onclick="addList()">
+                                <i class="fas fa-plus me-2"></i>
+                                İlk Listenizi Ekleyin
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Kişi Atama Modal'ı - Ana modal'dan sonra ekleyin -->
+<div class="modal fade" id="assignMemberModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-user-plus me-2"></i>
+                    Kişi Ata
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Takım Üyeleri</label>
+                    <div id="availableMembers" class="list-group">
+                        <!-- Takım üyeleri buraya eklenecek -->
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <h6 class="text-muted mb-2">Atanmış Kişiler</h6>
+                    <div id="assignedMembersList" class="d-flex flex-wrap gap-2">
+                        <!-- Atanmış kişiler buraya eklenecek -->
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Kart Detay Modal'ı - Güncellenmiş Versiyon -->
+<!-- Kart Detay Modal'ı - Düzeltilmiş Versiyon -->
+<div class="modal fade" id="cardDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="d-flex align-items-center w-100">
+                    <div class="me-3">
+                        <i class="fas fa-credit-card text-muted"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h5 class="modal-title mb-0" id="cardTitle" contenteditable="true">Kart Başlığı</h5>
+                        <small class="text-muted">
+                            <span id="cardListName">Liste adı</span> listesinde
+                        </small>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+            </div>
+
+            <div class="modal-body">
+                <div class="row">
+                    <!-- Sol Taraf - Ana İçerik -->
+                    <div class="col-lg-8">
+                        <!-- Açıklama -->
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-align-left me-2"></i>
+                                    Açıklama
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <!-- Mevcut Açıklama Gösterimi -->
+                                <div id="descriptionDisplay" class="mb-3" style="display: none;">
+                                    <div class="d-flex">
+                                        <div class="avatar-sm me-3">
+                                            <div class="avatar-placeholder">
+                                                <i class="fas fa-align-left"></i>
+                                            </div>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <strong>Açıklama</strong>
+                                                <button class="btn btn-sm btn-outline-secondary" onclick="editDescription()">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                            </div>
+                                            <div id="descriptionContent" class="mt-2 p-2 border rounded bg-light">
+                                                <!-- Açıklama buraya gelecek -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Açıklama Düzenleme -->
+                                <div id="descriptionEdit">
+                                    <textarea id="cardDescription" class="form-control" rows="4"
+                                              placeholder="Bu kart için daha detaylı bir açıklama ekleyin..."></textarea>
+                                    <div class="mt-2">
+                                        <button class="btn btn-trello-primary btn-sm" onclick="saveCardDescription()">
+                                            <i class="fas fa-save me-1"></i>
+                                            Kaydet
+                                        </button>
+                                        <button class="btn btn-outline-secondary btn-sm ms-2" onclick="cancelDescriptionEdit()" style="display: none;" id="cancelDescBtn">
+                                            İptal
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Aktiviteler & Yorumlar -->
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-list me-2"></i>
+                                    Aktiviteler
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <!-- Yeni Yorum Yazma -->
+                                <div class="d-flex mb-4">
+                                    <div class="avatar-sm me-3">
+                                        <div class="avatar-placeholder" id="currentUserAvatar">
+                                            U
+                                        </div>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <textarea id="newComment" class="form-control" rows="3"
+                                                  placeholder="Yorum yazın..."></textarea>
+                                        <div class="mt-2">
+                                            <button class="btn btn-trello-primary btn-sm" onclick="addComment()">
+                                                <i class="fas fa-comment me-1"></i>
+                                                Yorum Ekle
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Aktiviteler Listesi -->
+                                <div id="activitiesContainer">
+                                    <p class="text-muted text-center">Henüz aktivite yok</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sağ Taraf - Eylemler -->
+                    <div class="col-lg-4">
+                        <!-- Kart Bilgileri -->
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h6 class="mb-0">Kart Bilgileri</h6>
+                            </div>
+                            <div class="card-body">
+                                <!-- Son Tarih -->
+                                <div class="mb-3">
+                                    <label class="form-label">Son Tarih</label>
+                                    <input type="datetime-local" id="cardDueDate" class="form-control" onchange="updateDueDate()">
+                                </div>
+
+                                <!-- Atanan Kişiler -->
+                                <div class="mb-3">
+                                    <label class="form-label">Atanan Kişiler</label>
+                                    <div id="assignedMembers" class="d-flex flex-wrap gap-1 mb-2">
+                                        <!-- Atanan kişiler buraya eklenecek -->
+                                    </div>
+                                    <button class="btn btn-outline-secondary btn-sm w-100" onclick="showAssignModal()">
+                                        <i class="fas fa-user-plus me-1"></i>
+                                        Kişi Ata
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Eylemler -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">Eylemler</h6>
+                            </div>
+                            <div class="card-body d-grid gap-2">
+                                <button class="btn btn-outline-warning btn-sm" onclick="archiveCard()">
+                                    <i class="fas fa-archive me-1"></i>
+                                    Arşivle
+                                </button>
+                                <button class="btn btn-outline-danger btn-sm" onclick="deleteCard()">
+                                    <i class="fas fa-trash me-1"></i>
+                                    Sil
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let boardId = @Model.Id;
+        let currentCardId = null;
+                let assignModal = null;
+        let teamMembers = [];
+        let currentAssignments = [];
+
+        // Bootstrap Modal instance
+        let cardModal = null;
+
+        // Event listener'ları ekle
+        document.addEventListener('DOMContentLoaded', function() {
+            // Modal instance'ını oluştur
+            cardModal = new bootstrap.Modal(document.getElementById('cardDetailModal'));
+            assignModal = new bootstrap.Modal(document.getElementById('assignMemberModal'));
+                     const assignModalEl = document.getElementById('assignMemberModal');
+            assignModalEl.addEventListener('hidden.bs.modal', function () {
+                // Assign modal kapandığında ana modal'ı tekrar aç
+                if (currentCardId) {
+                    setTimeout(() => {
+                        cardModal.show();
+                    }, 300);
+                }
+            });
+
+            // Kart başlığı düzenleme
+            document.getElementById('cardTitle').addEventListener('blur', function() {
+                if (currentCardId) {
+                    updateCardTitle();
+                }
+            });
+
+            document.getElementById('cardTitle').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    this.blur();
+                }
+            });
+
+            // Liste düzenleme butonları
+            document.querySelectorAll('.list-edit-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const listId = this.dataset.listId;
+                    const listName = this.dataset.listName;
+                    editList(listId, listName);
+                });
+            });
+
+            // Liste arşivleme butonları
+            document.querySelectorAll('.list-archive-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const listId = this.dataset.listId;
+                    archiveList(listId);
+                });
+            });
+
+            // Kart tıklama olayları
+            document.querySelectorAll('.card-item').forEach(card => {
+                card.addEventListener('click', function(e) {
+                    if (!this.classList.contains('dragging')) {
+                        openCardDetails(this.dataset.cardId);
+                    }
+                });
+
+                // Drag olayları
+                card.addEventListener('dragstart', function(e) {
+                    e.dataTransfer.setData('text/plain', this.dataset.cardId);
+                    this.classList.add('dragging');
+                });
+
+                card.addEventListener('dragend', function() {
+                    this.classList.remove('dragging');
+                });
+            });
+
+            // Liste drag & drop
+            initializeListDragDrop();
+        });
+
+                // Açıklama gösterimini güncelle
+        function updateDescriptionDisplay(description) {
+            const descriptionDisplay = document.getElementById('descriptionDisplay');
+            const descriptionEdit = document.getElementById('descriptionEdit');
+            const descriptionContent = document.getElementById('descriptionContent');
+            const descriptionTextarea = document.getElementById('cardDescription');
+
+            if (description && description.trim()) {
+                // Açıklama varsa göster
+                descriptionContent.innerHTML = description.replace(/\n/g, '<br>');
+                descriptionDisplay.style.display = 'block';
+                descriptionEdit.style.display = 'none';
+                descriptionTextarea.value = description;
+            } else {
+                // Açıklama yoksa düzenleme modunda göster
+                descriptionDisplay.style.display = 'none';
+                descriptionEdit.style.display = 'block';
+                descriptionTextarea.value = '';
+            }
+        }
+
+
+                function editDescription() {
+            document.getElementById('descriptionDisplay').style.display = 'none';
+            document.getElementById('descriptionEdit').style.display = 'block';
+            document.getElementById('cancelDescBtn').style.display = 'inline-block';
+            document.getElementById('cardDescription').focus();
+        }
+
+        // Açıklama düzenlemeyi iptal et
+        function cancelDescriptionEdit() {
+            const currentDescription = document.getElementById('descriptionContent').innerHTML.replace(/<br>/g, '\n');
+            document.getElementById('cardDescription').value = currentDescription;
+
+            if (currentDescription.trim()) {
+                document.getElementById('descriptionDisplay').style.display = 'block';
+                document.getElementById('descriptionEdit').style.display = 'none';
+            }
+            document.getElementById('cancelDescBtn').style.display = 'none';
+        }
+
+
+                // Aktiviteleri yükle (yorumlar + diğer aktiviteler)
+        function loadActivities() {
+            if (!currentCardId) {
+                console.log('CurrentCardId yok, aktiviteler yüklenemiyor');
+                return;
+            }
+
+            console.log('Aktiviteler yükleniyor, cardId:', currentCardId);
+
+            fetch(`/Card/GetComments/${currentCardId}`)
+            .then(response => {
+                console.log('Get activities response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Get activities response:', data);
+
+                const container = document.getElementById('activitiesContainer');
+
+                if (data.success && data.comments && data.comments.length > 0) {
+                    container.innerHTML = data.comments.map(comment => `
+                        <div class="activity-item mb-3">
+                            <div class="d-flex">
+                                <div class="avatar-sm me-3">
+                                    ${comment.profilePicture ?
+                                        `<img src="${comment.profilePicture}" alt="${comment.userName}" class="rounded-circle">` :
+                                        `<div class="avatar-placeholder">${comment.userInitial}</div>`
+                                    }
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <strong>${comment.userName}</strong>
+                                        <small class="text-muted">${comment.createdAt}</small>
+                                    </div>
+                                    <div class="activity-content mt-1 p-2 border rounded bg-light">
+                                        ${comment.content}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+
+                    console.log(`${data.comments.length} aktivite yüklendi`);
+                } else {
+                    container.innerHTML = '<p class="text-muted text-center">Henüz aktivite yok</p>';
+                    console.log('Aktivite bulunamadı');
+                }
+            })
+            .catch(error => {
+                console.error('Load activities error:', error);
+                document.getElementById('activitiesContainer').innerHTML = '<p class="text-danger text-center">Aktiviteler yüklenirken hata oluştu</p>';
+            });
+        }
+
+                // openCardDetails fonksiyonunu bu şekilde güncelleyin:
+
+             function openCardDetails(cardId) {
+            console.log('Kart açılıyor, ID:', cardId);
+
+            currentCardId = cardId;
+
+            // Modal'ı hemen aç - loading state ile
+            const modal = document.getElementById('cardDetailModal');
+
+            // Loading state'i ayarla
+            document.getElementById('cardTitle').textContent = 'Yükleniyor...';
+            document.getElementById('cardListName').textContent = '';
+            document.getElementById('cardDescription').value = '';
+            document.getElementById('cardDueDate').value = '';
+            document.getElementById('activitiesContainer').innerHTML = '<div class="text-center p-3"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Yükleniyor...</span></div></div>';
+            document.getElementById('assignedMembers').innerHTML = '<div class="text-center"><small class="text-muted">Yükleniyor...</small></div>';
+
+            // Açıklama gösterimini sıfırla
+            document.getElementById('descriptionDisplay').style.display = 'none';
+            document.getElementById('descriptionEdit').style.display = 'block';
+            document.getElementById('cancelDescBtn').style.display = 'none';
+
+            // Modal'ı göster
+            cardModal.show();
+
+            // Kart detaylarını yükle
+            fetch(`/Card/GetCardDetails/${cardId}`)
+            .then(response => {
+                console.log('Response status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Gelen veri:', data);
+
+                if (data.success && data.card) {
+                    // Kart bilgilerini doldur
+                    document.getElementById('cardTitle').textContent = data.card.title || 'Başlıksız Kart';
+                    document.getElementById('cardListName').textContent = data.card.listName || '';
+                    document.getElementById('cardDueDate').value = data.card.dueDate || '';
+
+                    // Takım üyelerini ve atamaları güncelle
+                    teamMembers = data.card.teamMembers || [];
+                    currentAssignments = data.card.assignments || [];
+                    updateMainModalAssignments();
+
+                    // Açıklama yönetimi
+                    updateDescriptionDisplay(data.card.description);
+
+                    // Aktiviteleri yükle
+                    loadActivities();
+
+                    console.log('Kart bilgileri başarıyla yüklendi');
+                } else {
+                    console.error('Kart bilgisi hatası:', data.message);
+                    showNotification(data.message || 'Kart bilgileri yüklenemedi', 'error');
+
+                    // Hata durumunda modal'ı kapat
+                    setTimeout(() => {
+                        cardModal.hide();
+                    }, 2000);
+                }
+            })
+            .catch(error => {
+                console.error('Fetch hatası:', error);
+                showNotification('Kart bilgileri yüklenirken bir hata oluştu', 'error');
+
+                // Hata durumunda modal'ı kapat
+                setTimeout(() => {
+                    cardModal.hide();
+                }, 2000);
+            });
+        }
+
+
+                function loadCardAssignments() {
+            if (!currentCardId) return;
+
+            // Takım üyelerini ve mevcut atamaları render et
+            renderAvailableMembers();
+            renderAssignedMembers();
+        }
+
+        // Açıklama kaydet
+               // Açıklama kaydet - Düzeltilmiş versiyon
+                function saveCardDescription() {
+            const description = document.getElementById('cardDescription').value;
+
+            console.log('Açıklama kaydediliyor:', description);
+
+            fetch('/Card/UpdateDescription', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    cardId: currentCardId,
+                    description: description
+                })
+            })
+            .then(response => {
+                console.log('Update description response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Update description response:', data);
+
+                if (data.success) {
+                    // Açıklama gösterimini güncelle
+                    updateDescriptionDisplay(description);
+
+                    // Aktivitelere açıklama güncellemesini ekle
+                    addDescriptionActivity(description);
+
+                    showNotification('Açıklama kaydedildi', 'success');
+                    document.getElementById('cancelDescBtn').style.display = 'none';
+                } else {
+                    showNotification(data.message || 'Açıklama kaydedilemedi', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Save description error:', error);
+                showNotification('Açıklama kaydedilirken hata oluştu', 'error');
+            });
+        }
+
+
+
+        // Kart başlığını güncelle
+        function updateCardTitle() {
+            const newTitle = document.getElementById('cardTitle').textContent.trim();
+            if (!newTitle) return;
+
+            fetch('/Card/UpdateTitle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    cardId: currentCardId,
+                    title: newTitle
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Sayfa üzerindeki kart başlığını da güncelle
+                    const cardElement = document.querySelector(`[data-card-id="${currentCardId}"]`);
+                    if (cardElement) {
+                        cardElement.querySelector('.card-title').textContent = newTitle;
+                    }
+                    showNotification('Kart başlığı güncellendi', 'success');
+                } else {
+                    showNotification(data.message || 'Başlık güncellenemedi', 'error');
+                }
+            })
+            .catch(error => {
+                showNotification('Başlık güncellenirken hata oluştu', 'error');
+            });
+        }
+
+        // Son tarih güncelle
+        function updateDueDate() {
+            const dueDate = document.getElementById('cardDueDate').value;
+
+            fetch('/Card/UpdateDueDate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    cardId: currentCardId,
+                    dueDate: dueDate
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('Son tarih güncellendi', 'success');
+                } else {
+                    showNotification(data.message || 'Hata oluştu', 'error');
+                }
+            });
+        }
+
+                // Yorum ekleme - Düzeltilmiş versiyon
+               // Yorum ekleme - Aktivite versiyonu
+        function addComment() {
+            const commentText = document.getElementById('newComment').value.trim();
+            if (!commentText) {
+                showNotification('Lütfen bir yorum yazın', 'warning');
+                return;
+            }
+
+            console.log('Yorum ekleniyor:', commentText);
+
+            fetch('/Card/AddComment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    cardId: currentCardId,
+                    content: commentText
+                })
+            })
+            .then(response => {
+                console.log('Add comment response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Add comment response:', data);
+
+                if (data.success) {
+                    document.getElementById('newComment').value = '';
+                    loadActivities(); // Aktiviteleri yeniden yükle
+                    showNotification('Yorum eklendi', 'success');
+                } else {
+                    showNotification(data.message || 'Yorum eklenirken hata oluştu', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Add comment error:', error);
+                showNotification('Yorum eklenirken hata oluştu', 'error');
+            });
+        }
+
+        // Yorumları yükle
+               // Yorumları yükle - Düzeltilmiş versiyon
+        function loadComments() {
+            if (!currentCardId) {
+                console.log('CurrentCardId yok, yorumlar yüklenemiyor');
+                return;
+            }
+
+            console.log('Yorumlar yükleniyor, cardId:', currentCardId);
+
+            fetch(`/Card/GetComments/${currentCardId}`)
+            .then(response => {
+                console.log('Get comments response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Get comments response:', data);
+
+                const container = document.getElementById('commentsContainer');
+
+                if (data.success && data.comments && data.comments.length > 0) {
+                    container.innerHTML = data.comments.map(comment => `
+                        <div class="comment-item mb-3">
+                            <div class="d-flex">
+                                <div class="avatar-sm me-3">
+                                    ${comment.profilePicture ?
+                                        `<img src="${comment.profilePicture}" alt="${comment.userName}" class="rounded-circle">` :
+                                        `<div class="avatar-placeholder">${comment.userInitial}</div>`
+                                    }
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <strong>${comment.userName}</strong>
+                                        <small class="text-muted">${comment.createdAt}</small>
+                                    </div>
+                                    <p class="mb-0 mt-1">${comment.content}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+
+                    console.log(`${data.comments.length} yorum yüklendi`);
+                } else {
+                    container.innerHTML = '<p class="text-muted text-center">Henüz yorum yok</p>';
+                    console.log('Yorum bulunamadı');
+                }
+            })
+            .catch(error => {
+                console.error('Load comments error:', error);
+                document.getElementById('commentsContainer').innerHTML = '<p class="text-danger text-center">Yorumlar yüklenirken hata oluştu</p>';
+            });
+        }
+
+        // Kişi atama modal'ını göster - Düzeltilmiş versiyon
+        function showAssignModal() {
+            if (!currentCardId) {
+                showNotification('Önce bir kart seçin', 'warning');
+                return;
+            }
+
+            console.log('Kişi atama modal\'ı açılıyor, cardId:', currentCardId);
+
+            try {
+                // Ana modal'ı gizle
+                cardModal.hide();
+
+                // Backdrop'u temizle
+                document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+                    backdrop.remove();
+                });
+
+                // Kısa bir bekleyişten sonra assign modal'ı aç
+                setTimeout(() => {
+                    // Loading göster
+                    document.getElementById('availableMembers').innerHTML = '<p class="text-center text-muted">Yükleniyor...</p>';
+                    document.getElementById('assignedMembersList').innerHTML = '<p class="text-center text-muted">Yükleniyor...</p>';
+
+                    // Assign modal'ı aç
+                    assignModal.show();
+
+                    // Kart detaylarını ve takım üyelerini getir
+                    loadCardAssignments();
+                }, 300);
+
+            } catch (error) {
+                console.error('showAssignModal error:', error);
+                showNotification('Modal açılırken hata oluştu', 'error');
+            }
+        }
+
+                // Atanmış kişileri göster
+        function renderAssignedMembers() {
+            const container = document.getElementById('assignedMembersList');
+
+            if (currentAssignments.length === 0) {
+                container.innerHTML = '<p class="text-muted text-center">Henüz kimse atanmamış</p>';
+                return;
+            }
+
+            container.innerHTML = currentAssignments.map(assignment => `
+                <div class="d-flex flex-column align-items-center">
+                    <div class="avatar-sm mb-1" title="${assignment.userName}">
+                        ${assignment.profilePicture ?
+                            `<img src="${assignment.profilePicture}" alt="${assignment.userName}" class="rounded-circle">` :
+                            `<div class="avatar-placeholder">${assignment.userInitial}</div>`
+                        }
+                    </div>
+                    <small class="text-muted text-center" style="font-size: 0.7em;">${assignment.userName.split(' ')[0]}</small>
+                    <button class="btn btn-sm btn-outline-danger mt-1"
+                            onclick="removeMemberAssignment('${assignment.userId}', '${assignment.userName}')"
+                            title="Atamayı Kaldır">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+
+                function addDescriptionActivity(description) {
+            const container = document.getElementById('activitiesContainer');
+            const now = new Date();
+            const timeStr = now.toLocaleDateString('tr-TR') + ' ' + now.toLocaleTimeString('tr-TR', {hour: '2-digit', minute: '2-digit'});
+
+            const descriptionActivity = `
+                <div class="activity-item mb-3">
+                    <div class="d-flex">
+                        <div class="avatar-sm me-3">
+                            <div class="avatar-placeholder">
+                                <i class="fas fa-align-left"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <strong>Açıklama güncellendi</strong>
+                                <small class="text-muted">${timeStr}</small>
+                            </div>
+                            <div class="activity-content mt-1 p-2 border rounded bg-light">
+                                ${description ? description.replace(/\n/g, '<br>') : '<em class="text-muted">Açıklama kaldırıldı</em>'}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Mevcut aktivitelerin başına ekle
+            if (container.innerHTML.includes('Henüz aktivite yok')) {
+                container.innerHTML = descriptionActivity;
+            } else {
+                container.innerHTML = descriptionActivity + container.innerHTML;
+            }
+        }
+
+
+
+                // Mevcut takım üyelerini listele
+        function renderAvailableMembers() {
+            const container = document.getElementById('availableMembers');
+
+            if (teamMembers.length === 0) {
+                container.innerHTML = '<p class="text-muted text-center">Takım üyesi bulunamadı</p>';
+                return;
+            }
+
+            container.innerHTML = teamMembers.map(member => {
+                const isAssigned = currentAssignments.some(a => a.userId === member.userId);
+
+                return `
+                    <div class="list-group-item d-flex align-items-center justify-content-between ${isAssigned ? 'bg-light' : ''}"
+                         style="cursor: pointer;"
+                         onclick="toggleMemberAssignment('${member.userId}', '${member.userName}', this)">
+                        <div class="d-flex align-items-center">
+                            <div class="avatar-sm me-3">
+                                ${member.profilePicture ?
+                                    `<img src="${member.profilePicture}" alt="${member.userName}" class="rounded-circle">` :
+                                    `<div class="avatar-placeholder">${member.userInitial}</div>`
+                                }
+                            </div>
+                            <div>
+                                <div class="fw-bold">${member.userName}</div>
+                                <small class="text-muted">${member.role}</small>
+                            </div>
+                        </div>
+                        <div>
+                            ${isAssigned ?
+                                '<i class="fas fa-check text-success"></i>' :
+                                '<i class="fas fa-plus text-muted"></i>'
+                            }
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+
+                // Üye atamasını toggle et
+        function toggleMemberAssignment(userId, userName, element) {
+            const isAssigned = currentAssignments.some(a => a.userId === userId);
+
+            if (isAssigned) {
+                removeMemberAssignment(userId, userName);
+            } else {
+                addMemberAssignment(userId, userName);
+            }
+        }
+
+        // Üye ataması ekle
+        function addMemberAssignment(userId, userName) {
+            console.log('Üye atanıyor:', userName);
+
+            fetch('/Card/AssignMember', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    cardId: currentCardId,
+                    userId: userId
+                })
+            })
+            .then(response => {
+                console.log('Assign member response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Assign member response:', data);
+
+                if (data.success) {
+                    // Atama listesini güncelle
+                    const member = teamMembers.find(m => m.userId === userId);
+                    if (member) {
+                        currentAssignments.push({
+                            userId: member.userId,
+                            userName: member.userName,
+                            userInitial: member.userInitial,
+                            profilePicture: member.profilePicture
+                        });
+                    }
+
+                    // Görünümü güncelle
+                    renderAvailableMembers();
+                    renderAssignedMembers();
+                    updateMainModalAssignments();
+
+                    showNotification(`${userName} karta atandı`, 'success');
+                } else {
+                    showNotification(data.message || 'Atama başarısız', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Assign member error:', error);
+                showNotification('Atama sırasında hata oluştu', 'error');
+            });
+        }
+
+        // Üye atamasını kaldır
+        function removeMemberAssignment(userId, userName) {
+            console.log('Üye ataması kaldırılıyor:', userName);
+
+            fetch('/Card/UnassignMember', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    cardId: currentCardId,
+                    userId: userId
+                })
+            })
+            .then(response => {
+                console.log('Unassign member response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Unassign member response:', data);
+
+                if (data.success) {
+                    // Atama listesinden kaldır
+                    currentAssignments = currentAssignments.filter(a => a.userId !== userId);
+
+                    // Görünümü güncelle
+                    renderAvailableMembers();
+                    renderAssignedMembers();
+                    updateMainModalAssignments();
+
+                    showNotification(`${userName} atama kaldırıldı`, 'success');
+                } else {
+                    showNotification(data.message || 'Atama kaldırma başarısız', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Unassign member error:', error);
+                showNotification('Atama kaldırma sırasında hata oluştu', 'error');
+            });
+        }
+
+        // Ana modal'daki atamaları güncelle
+        function updateMainModalAssignments() {
+            const container = document.getElementById('assignedMembers');
+
+            if (currentAssignments.length === 0) {
+                container.innerHTML = '<p class="text-muted text-center small">Henüz kimse atanmamış</p>';
+                return;
+            }
+
+            container.innerHTML = currentAssignments.map(assignment => `
+                <div class="d-flex flex-column align-items-center me-2">
+                    <div class="avatar-xs mb-1" title="${assignment.userName}">
+                        ${assignment.profilePicture ?
+                            `<img src="${assignment.profilePicture}" alt="${assignment.userName}" class="rounded-circle">` :
+                            `<div class="avatar-placeholder-xs">${assignment.userInitial}</div>`
+                        }
+                    </div>
+                    <small style="font-size: 0.6em;">${assignment.userName.split(' ')[0]}</small>
+                </div>
+            `).join('');
+
+            // Ana board'daki kartı da güncelle
+            updateCardAssignmentsOnBoard();
+        }
+
+        // Board'daki kart atamalarını güncelle
+        function updateCardAssignmentsOnBoard() {
+            const cardElement = document.querySelector(`[data-card-id="${currentCardId}"]`);
+            if (!cardElement) return;
+
+            let assignedUsersDiv = cardElement.querySelector('.assigned-users');
+
+            if (currentAssignments.length === 0) {
+                // Ataması olmayan kartlarda div'i kaldır
+                if (assignedUsersDiv) {
+                    assignedUsersDiv.remove();
+                }
+                return;
+            }
+
+            if (!assignedUsersDiv) {
+                // Assigned users div'i yoksa oluştur
+                assignedUsersDiv = document.createElement('div');
+                assignedUsersDiv.className = 'assigned-users';
+
+                const cardFooter = cardElement.querySelector('.card-footer');
+                if (cardFooter) {
+                    cardFooter.appendChild(assignedUsersDiv);
+                }
+            }
+
+            // İçeriği güncelle
+            assignedUsersDiv.innerHTML = currentAssignments.slice(0, 3).map(assignment => `
+                <div class="avatar-xs" title="${assignment.userName}">
+                    ${assignment.profilePicture ?
+                        `<img src="${assignment.profilePicture}" alt="${assignment.userName}" class="rounded-circle">` :
+                        `<div class="avatar-placeholder-xs">${assignment.userInitial}</div>`
+                    }
+                </div>
+            `).join('') +
+            (currentAssignments.length > 3 ?
+                `<div class="avatar-xs"><div class="avatar-placeholder-xs">+${currentAssignments.length - 3}</div></div>` :
+                ''
+            );
+        }
+
+
+        // Kart arşivleme
+        function archiveCard() {
+            if (!confirm('Bu kartı arşivlemek istediğiniz emin misiniz?')) return;
+
+            fetch('/Card/Archive', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cardId: currentCardId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    cardModal.hide();
+                    location.reload();
+                } else {
+                    showNotification(data.message || 'Hata oluştu', 'error');
+                }
+            });
+        }
+
+        // Kart silme
+        function deleteCard() {
+            if (!confirm('Bu kartı kalıcı olarak silmek istediğiniz emin misiniz?')) return;
+
+            fetch('/Card/Delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cardId: currentCardId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    cardModal.hide();
+                    location.reload();
+                } else {
+                    showNotification(data.message || 'Hata oluştu', 'error');
+                }
+            });
+        }
+
+        // Bildirim göster
+        function showNotification(message, type = 'info') {
+            // Basit toast bildirimi
+            const toast = document.createElement('div');
+            toast.className = `alert alert-${type === 'error' ? 'danger' : type === 'success' ? 'success' : 'info'} position-fixed`;
+            toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            toast.textContent = message;
+
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        // Liste ekleme
+        function addList() {
+            const listName = prompt('Liste adı:');
+            if (!listName || !listName.trim()) return;
+
+            fetch('/List/Create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                },
+                body: JSON.stringify({
+                    name: listName.trim(),
+                    boardId: boardId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    showNotification(data.message, 'error');
+                }
+            });
+        }
+
+        // Liste düzenleme
+        function editList(listId, currentName) {
+            const newName = prompt('Yeni liste adı:', currentName);
+            if (!newName || !newName.trim() || newName === currentName) return;
+
+            fetch('/List/Update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: listId, name: newName.trim() })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.querySelector(`[data-list-id="${listId}"] .list-title`).textContent = newName;
+                    document.querySelector(`[data-list-id="${listId}"] .list-edit-btn`).dataset.listName = newName;
+                } else {
+                    showNotification(data.message, 'error');
+                }
+            });
+        }
+
+        // Liste arşivleme
+        function archiveList(listId) {
+            if (!confirm('Bu listeyi arşivlemek istediğinizden emin misiniz?')) return;
+
+            fetch('/List/Archive', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `id=${listId}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.querySelector(`[data-list-id="${listId}"]`).remove();
+                } else {
+                    showNotification(data.message, 'error');
+                }
+            });
+        }
+
+        // Kart ekleme
+        function addCard(listId) {
+            const cardTitle = prompt('Kart başlığı:');
+            if (!cardTitle || !cardTitle.trim()) return;
+
+            fetch('/Card/Create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title: cardTitle.trim(), listId: listId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    showNotification(data.message, 'error');
+                }
+            });
+        }
+
+
+
+
+        // Liste drag & drop başlatma
+        function initializeListDragDrop() {
+            // Kart drag & drop
+            document.querySelectorAll('.cards-container').forEach(container => {
+                container.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                    this.classList.add('drag-over');
+                });
+
+                container.addEventListener('dragleave', function() {
+                    this.classList.remove('drag-over');
+                });
+
+                container.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    this.classList.remove('drag-over');
+
+                    const cardId = e.dataTransfer.getData('text/plain');
+                    const draggedCard = document.querySelector(`[data-card-id="${cardId}"]`);
+                    const newListId = this.dataset.listId;
+
+                    if (draggedCard) {
+                        // Kartı yeni listeye taşı
+                        this.appendChild(draggedCard);
+
+                        // Sunucuya güncelleme gönder
+                        fetch('/Card/MoveToList', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                cardId: parseInt(cardId),
+                                listId: parseInt(newListId)
+                            })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (!data.success) {
+                                showNotification(data.message || 'Kart taşıma hatası', 'error');
+                                location.reload();
+                            }
+                        });
+                    }
+                });
+            });
+        }
+    </script>
+}
+
+<style>
+    /* CSS'in en başına ekleyin - mevcut :root'un yerine */
+    :root {
+        --trello-blue: #0079bf;
+        --trello-gray: #ebecf0;
+        --trello-text: #172b4d;
+    }
+
+    /* Modal Z-Index düzeltmeleri - ÇOK ÖNEMLİ! */
+    .modal {
+        z-index: 1055;
+    }
+
+    .modal-backdrop {
+        z-index: 1050;
+    }
+
+    /* Ana kart modal'ı */
+    #cardDetailModal {
+        z-index: 1055 !important;
+    }
+
+        #cardDetailModal .modal-backdrop {
+            z-index: 1050 !important;
+        }
+
+    /* Kişi atama modal'ı - daha yüksek z-index */
+    #assignMemberModal {
+        z-index: 1065 !important;
+    }
+
+        #assignMemberModal .modal-backdrop {
+            z-index: 1060 !important;
+        }
+
+    /* Bootstrap modal backdrop override */
+    .modal-backdrop.show {
+        opacity: 0.5;
+    }
+
+    /* Modal animasyon düzeltmesi */
+    .modal.fade .modal-dialog {
+        transition: transform 0.3s ease-out;
+        transform: translate(0, -50px);
+    }
+
+    .modal.show .modal-dialog {
+        transform: none;
+    }
+
+    /* Assign modal özel stilleri */
+    #assignMemberModal .modal-dialog {
+        margin: 1.75rem auto;
+        max-width: 500px;
+    }
+
+    /* Modal loading spinner */
+    .spinner-border {
+        width: 2rem;
+        height: 2rem;
+    }
+
+    /* Kişi Atama Modal CSS */
+    #assignMemberModal .list-group-item {
+        border: 1px solid #dee2e6;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+        #assignMemberModal .list-group-item:hover {
+            background-color: rgba(0, 123, 255, 0.05) !important;
+            border-color: var(--trello-blue);
+        }
+
+        #assignMemberModal .list-group-item.bg-light {
+            background-color: rgba(40, 167, 69, 0.1) !important;
+            border-color: #28a745;
+        }
+
+    #assignMemberModal .avatar-sm {
+        width: 40px;
+        height: 40px;
+    }
+
+    #assignedMembersList .avatar-sm {
+        width: 50px;
+        height: 50px;
+    }
+
+    #assignedMembersList .btn-outline-danger {
+        padding: 0.15rem 0.3rem;
+        font-size: 0.7rem;
+        line-height: 1;
+    }
+
+    /* Ana modal'daki atanan kişiler */
+    #assignedMembers {
+        min-height: 40px;
+        max-height: 80px;
+        overflow-y: auto;
+    }
+
+        #assignedMembers .avatar-xs {
+            flex-shrink: 0;
+        }
+
+    /* Board kartlarındaki assigned users */
+    .assigned-users {
+        display: flex;
+        gap: 0.15rem;
+        flex-wrap: wrap;
+    }
+
+        .assigned-users .avatar-xs {
+            position: relative;
+        }
+
+            .assigned-users .avatar-xs:not(:first-child) {
+                margin-left: -8px;
+            }
+
+            .assigned-users .avatar-xs img,
+            .assigned-users .avatar-placeholder-xs {
+                border: 2px solid white;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            }
+
+            /* Hover efektleri */
+            .assigned-users .avatar-xs:hover {
+                transform: translateY(-2px);
+                z-index: 10;
+            }
+
+    .activity-item {
+        transition: all 0.2s ease;
+    }
+
+        .activity-item:hover {
+            background-color: rgba(0,0,0,0.02);
+            border-radius: 8px;
+            padding: 0.5rem;
+            margin-left: -0.5rem;
+            margin-right: -0.5rem;
+        }
+
+    .activity-content {
+        word-wrap: break-word;
+        white-space: pre-wrap;
+        line-height: 1.4;
+        font-size: 0.9rem;
+    }
+
+    #descriptionContent {
+        word-wrap: break-word;
+        white-space: pre-wrap;
+        line-height: 1.4;
+        min-height: 2.5rem;
+        font-size: 0.9rem;
+    }
+
+    #descriptionDisplay .avatar-placeholder {
+        background: var(--trello-blue);
+        font-size: 0.8rem;
+    }
+
+    #cardDescription:focus {
+        border-color: var(--trello-blue);
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+
+    .btn-trello-primary {
+        background-color: var(--trello-blue);
+        border-color: var(--trello-blue);
+        color: white;
+    }
+
+        .btn-trello-primary:hover {
+            background-color: #0056b3;
+            border-color: #0056b3;
+        }
+
+    /* Scroll animasyonu */
+    .activity-item {
+        animation: slideIn 0.3s ease-out;
+    }
+
+    @@keyframes slideIn {
+        from
+
+    {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    }
+
+    .board-container {
+        min-height: 100vh;
+        padding: 0;
+    }
+
+    .board-header {
+        padding: 1rem 0;
+        border-bottom: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .board-content {
+        padding: 1rem 0;
+        overflow-x: auto;
+    }
+
+    .lists-container {
+        display: flex;
+        gap: 1rem;
+        padding: 1rem;
+        min-width: max-content;
+    }
+
+    .list-column {
+        background: var(--trello-gray);
+        border-radius: 12px;
+        width: 300px;
+        min-height: 100px;
+        padding: 1rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .list-header {
+        margin-bottom: 1rem;
+    }
+
+    .cards-container {
+        min-height: 50px;
+        margin-bottom: 1rem;
+    }
+
+    .card-item {
+        background: white;
+        border-radius: 8px;
+        padding: 0.75rem;
+        margin-bottom: 0.5rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+        .card-item:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            transform: translateY(-1px);
+        }
+
+        .card-item.dragging {
+            opacity: 0.5;
+            transform: rotate(5deg);
+        }
+
+    .card-title {
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+        line-height: 1.3;
+    }
+
+    .card-labels {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+    }
+
+    .label-badge {
+        font-size: 0.7em;
+        font-weight: 600;
+        padding: 0.2em 0.5em;
+        border-radius: 12px;
+    }
+
+    .card-footer {
+        margin-top: 0.5rem;
+    }
+
+    .card-icons {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    .card-icon {
+        font-size: 0.8em;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .team-avatars {
+        gap: 0.25rem;
+    }
+
+    .avatar-sm, .avatar-xs {
+        width: 32px;
+        height: 32px;
+        position: relative;
+    }
+
+    .avatar-xs {
+        width: 24px;
+        height: 24px;
+    }
+
+    .avatar-placeholder, .avatar-placeholder-xs {
+        width: 100%;
+        height: 100%;
+        background: var(--trello-blue);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        font-size: 0.7em;
+        font-weight: 600;
+    }
+
+    .avatar-placeholder-xs {
+        font-size: 0.6em;
+    }
+
+    .btn-ghost {
+        background: transparent;
+        border: none;
+        color: #666;
+    }
+
+        .btn-ghost:hover {
+            background: rgba(0,0,0,0.1);
+            color: #333;
+        }
+
+    .btn-white {
+        background: white;
+        border: none;
+        color: var(--trello-text);
+    }
+
+    .empty-list {
+        text-align: center;
+        padding: 2rem 1rem;
+        border: 2px dashed #ddd;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+        .empty-list:hover {
+            border-color: var(--trello-blue);
+            background: rgba(0, 123, 255, 0.05);
+        }
+
+    .empty-board {
+        min-height: 300px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .drag-over {
+        background: rgba(0, 123, 255, 0.1);
+        border: 2px dashed var(--trello-blue);
+    }
+
+    .add-card-btn {
+        margin-top: 0.5rem;
+    }
+
+    /* Modal Düzenlemeleri */
+    .modal-xl {
+        max-width: 1200px;
+    }
+
+    #cardTitle {
+        border: none;
+        background: transparent;
+        font-size: 1.25rem;
+        font-weight: 600;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+    }
+
+        #cardTitle:focus {
+            outline: none;
+            background: rgba(0,0,0,0.05);
+        }
+
+    /* Toast bildirimler için z-index */
+    .alert.position-fixed {
+        z-index: 9999 !important;
+    }
+
+    /* Responsive düzenlemeler */
+    @@media (max-width: 768px) {
+        .activity-item .d-flex
+
+    {
+        flex-direction: column;
+    }
+
+    .activity-item .avatar-sm {
+        align-self: flex-start;
+        margin-bottom: 0.5rem;
+    }
+
+    .activity-content {
+        margin-left: 0;
+    }
+
+    .lists-container {
+        flex-direction: column;
+        padding: 0.5rem;
+    }
+
+    .list-column {
+        width: 100%;
+        margin-bottom: 1rem;
+    }
+
+    .board-header {
+        padding: 0.5rem 0;
+    }
+
+        .board-header .d-flex {
+            flex-direction: column;
+            align-items: flex-start !important;
+            gap: 1rem;
+        }
+
+    .team-avatars {
+        order: 2;
+    }
+
+    .modal-body .row {
+        flex-direction: column-reverse;
+    }
+
+    }
+
+    @@media (max-width: 576px) {
+        .card-footer
+
+    {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .assigned-users {
+        align-self: flex-end;
+    }
+
+    .avatar-sm {
+        width: 28px;
+        height: 28px;
+    }
+
+    .avatar-xs {
+        width: 20px;
+        height: 20px;
+    }
+
+    }
+    
+</style>

@@ -1,0 +1,453 @@
+﻿@model TrelloClone.Models.Sprint
+@{
+    ViewData["Title"] = "Sprint Raporu";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Report Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="mb-2">
+                        <i class="fas fa-chart-bar text-primary me-2"></i>
+                        @Model.Name - Sprint Raporu
+                    </h2>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item">
+                                <a asp-controller="Board" asp-action="Index">Panolar</a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a asp-controller="Board" asp-action="Details" asp-route-id="@Model.BoardId">@(Model.Board?.Name ?? "Pano")</a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a asp-controller="Sprint" asp-action="Index" asp-route-boardId="@Model.BoardId">Sprint'ler</a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a asp-controller="Sprint" asp-action="Details" asp-route-id="@Model.Id">@Model.Name</a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Rapor</li>
+                        </ol>
+                    </nav>
+                </div>
+                <div>
+                    <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary me-2">
+                        <i class="fas fa-arrow-left"></i> Sprint Detayı
+                    </a>
+                    <button class="btn btn-success" onclick="window.print()">
+                        <i class="fas fa-print"></i> Yazdır
+                    </button>
+                </div>
+            </div>
+
+            <!-- Sprint Summary -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Sprint Özeti
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <table class="table table-borderless">
+                                        <tr>
+                                            <td><strong>Sprint Adı:</strong></td>
+                                            <td>@Model.Name</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Durum:</strong></td>
+                                            <td>
+                                                @{
+                                                    var statusClass = Model.Status switch
+                                                    {
+                                                        TrelloClone.Models.SprintStatus.Planning => "badge bg-secondary",
+                                                        TrelloClone.Models.SprintStatus.Active => "badge bg-success",
+                                                        TrelloClone.Models.SprintStatus.Completed => "badge bg-primary",
+                                                        TrelloClone.Models.SprintStatus.Cancelled => "badge bg-danger",
+                                                        _ => "badge bg-secondary"
+                                                    };
+
+                                                    var statusText = Model.Status switch
+                                                    {
+                                                        TrelloClone.Models.SprintStatus.Planning => "Planlama",
+                                                        TrelloClone.Models.SprintStatus.Active => "Aktif",
+                                                        TrelloClone.Models.SprintStatus.Completed => "Tamamlandı",
+                                                        TrelloClone.Models.SprintStatus.Cancelled => "İptal Edildi",
+                                                        _ => "Bilinmeyen"
+                                                    };
+                                                }
+                                                <span class="@statusClass">@statusText</span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Başlangıç Tarihi:</strong></td>
+                                            <td>@Model.StartDate.ToString("dd.MM.yyyy")</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Bitiş Tarihi:</strong></td>
+                                            <td>@Model.EndDate.ToString("dd.MM.yyyy")</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                <div class="col-md-6">
+                                    <table class="table table-borderless">
+                                        <tr>
+                                            <td><strong>Sprint Süresi:</strong></td>
+                                            <td>@((Model.EndDate - Model.StartDate).Days) gün</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Oluşturan:</strong></td>
+                                            <td>@(Model.CreatedByUser?.UserName ?? "Bilinmeyen")</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Oluşturulma:</strong></td>
+                                            <td>@Model.CreatedAt.ToString("dd.MM.yyyy HH:mm")</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Pano:</strong></td>
+                                            <td>@(Model.Board?.Name ?? "Bilinmeyen")</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                            @if (!string.IsNullOrEmpty(Model.Description))
+                            {
+                                <hr>
+                                <div class="row">
+                                    <div class="col-12">
+                                        <strong>Açıklama:</strong>
+                                        <p class="mt-2">@Model.Description</p>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Performance Metrics -->
+            <div class="row mb-4">
+                @{
+                    var totalCards = Model.CardSprints?.Count ?? 0;
+                    var completedCards = 0;
+                    var inProgressCards = 0;
+                    var todoCards = 0;
+                    var progressPercentage = 0;
+
+                    if (Model.CardSprints != null)
+                    {
+                        completedCards = Model.CardSprints.Count(cs =>
+                        cs.Card?.List?.Name?.ToLower()?.Contains("tamamla") == true ||
+                        cs.Card?.List?.Name?.ToLower()?.Contains("done") == true ||
+                        cs.Card?.List?.Name?.ToLower()?.Contains("finish") == true);
+
+                        inProgressCards = Model.CardSprints.Count(cs =>
+                        cs.Card?.List?.Name?.ToLower()?.Contains("devam") == true ||
+                        cs.Card?.List?.Name?.ToLower()?.Contains("progress") == true ||
+                        cs.Card?.List?.Name?.ToLower()?.Contains("doing") == true);
+
+                        todoCards = Model.CardSprints.Count(cs =>
+                        cs.Card?.List?.Name?.ToLower()?.Contains("yapılacak") == true ||
+                        cs.Card?.List?.Name?.ToLower()?.Contains("todo") == true ||
+                        cs.Card?.List?.Name?.ToLower()?.Contains("backlog") == true);
+
+                        progressPercentage = totalCards > 0 ? (completedCards * 100 / totalCards) : 0;
+                    }
+                }
+
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h2 class="text-primary">@totalCards</h2>
+                            <p class="card-title">Toplam Kart</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h2 class="text-success">@completedCards</h2>
+                            <p class="card-title">Tamamlanan</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h2 class="text-info">@inProgressCards</h2>
+                            <p class="card-title">Devam Eden</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h2 class="text-warning">@todoCards</h2>
+                            <p class="card-title">Yapılacak</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress Chart -->
+            <div class="row mb-4">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-chart-pie me-2"></i>
+                                İlerleme Analizi
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <span>Tamamlanma Oranı</span>
+                                    <span class="fw-bold">%@progressPercentage</span>
+                                </div>
+                                <div class="progress" style="height: 25px;">
+                                    <div class="progress-bar bg-success" style="width: @progressPercentage%">
+                                        %@progressPercentage
+                                    </div>
+                                </div>
+                            </div>
+
+                            @if (totalCards > 0)
+                            {
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="text-center p-3">
+                                            <div class="display-6 text-success">@completedCards</div>
+                                            <small>Tamamlanan</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="text-center p-3">
+                                            <div class="display-6 text-info">@inProgressCards</div>
+                                            <small>Devam Eden</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="text-center p-3">
+                                            <div class="display-6 text-warning">@todoCards</div>
+                                            <small>Yapılacak</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-trophy me-2"></i>
+                                Sprint Performansı
+                            </h5>
+                        </div>
+                        <div class="card-body text-center">
+                            @if (progressPercentage >= 90)
+                            {
+                                <div class="text-success mb-3">
+                                    <i class="fas fa-trophy fa-3x"></i>
+                                </div>
+                                <h5 class="text-success">Mükemmel!</h5>
+                                <p>Sprint hedefleri büyük ölçüde tamamlandı.</p>
+                            }
+                            else if (progressPercentage >= 70)
+                            {
+                                <div class="text-primary mb-3">
+                                    <i class="fas fa-thumbs-up fa-3x"></i>
+                                </div>
+                                <h5 class="text-primary">İyi!</h5>
+                                <p>Sprint hedefleri büyük ölçüde gerçekleştirildi.</p>
+                            }
+                            else if (progressPercentage >= 50)
+                            {
+                                <div class="text-warning mb-3">
+                                    <i class="fas fa-exclamation-triangle fa-3x"></i>
+                                </div>
+                                <h5 class="text-warning">Orta</h5>
+                                <p>Sprint hedefleri kısmen tamamlandı.</p>
+                            }
+                            else
+                            {
+                                <div class="text-danger mb-3">
+                                    <i class="fas fa-times-circle fa-3x"></i>
+                                </div>
+                                <h5 class="text-danger">Geliştirilmeli</h5>
+                                <p>Sprint hedefleri yetersiz tamamlandı.</p>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Card List -->
+            @if (Model.CardSprints?.Any() == true)
+            {
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-list me-2"></i>
+                                    Sprint Kartları Detayı
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Kart</th>
+                                                <th>Liste</th>
+                                                <th>Atanan Kişiler</th>
+                                                <th>Durum</th>
+                                                <th>Eklenme Tarihi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var cardSprint in Model.CardSprints.Where(cs => cs.Card != null).OrderBy(cs => cs.Card?.List?.Name ?? ""))
+                                            {
+                                                <tr>
+                                                    <td>
+                                                        <strong>@(cardSprint.Card?.Title ?? "Bilinmeyen")</strong>
+                                                        @if (!string.IsNullOrEmpty(cardSprint.Card?.Description))
+                                                        {
+                                                            <br>
+
+                                                            <small class="text-muted">@cardSprint.Card.Description.Substring(0, Math.Min(100, cardSprint.Card.Description.Length))...</small>
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-light text-dark">@(cardSprint.Card?.List?.Name ?? "Liste belirtilmemiş")</span>
+                                                    </td>
+                                                    <td>
+                                                        @if (cardSprint.Card?.Assignments?.Any() == true)
+                                                        {
+                                                            @foreach (var assignment in cardSprint.Card.Assignments.Take(3))
+                                                            {
+                                                                <span class="badge bg-secondary me-1">@(assignment.User?.UserName ?? "Bilinmeyen")</span>
+                                                            }
+                                                            @if (cardSprint.Card.Assignments.Count > 3)
+                                                            {
+                                                                <span class="text-muted small">+@(cardSprint.Card.Assignments.Count - 3) diğer</span>
+                                                            }
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="text-muted">Atanmamış</span>
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        @{
+                                                            var listName = cardSprint.Card?.List?.Name?.ToLower() ?? "";
+                                                            var isCompleted = listName.Contains("tamamla") || listName.Contains("done") || listName.Contains("finish");
+                                                        }
+                                                        @if (isCompleted)
+                                                        {
+                                                            <span class="badge bg-success">
+                                                                <i class="fas fa-check me-1"></i>Tamamlandı
+                                                            </span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="badge bg-warning">
+                                                                <i class="fas fa-clock me-1"></i>Devam Ediyor
+                                                            </span>
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        <small>@cardSprint.AddedAt.ToString("dd.MM.yyyy HH:mm")</small>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-body text-center py-5">
+                                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                                <h5>Bu sprint'e kart eklenmemiş</h5>
+                                <p class="text-muted">Sprint süresince hiçbir kart bu sprint'e atanmamış.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Report Footer -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <p class="text-muted mb-0">
+                                <small>
+                                    Bu rapor @DateTime.Now.ToString("dd.MM.yyyy HH:mm") tarihinde oluşturulmuştur.
+                                    <br>
+                                    Agile metodoloji ile yönetilen @(Model.Board?.Name ?? "Bilinmeyen") panosunun @Model.Name sprint'i raporu.
+                                </small>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        border: none;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .card-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .progress {
+        border-radius: 10px;
+    }
+
+    .progress-bar {
+        border-radius: 10px;
+    }
+
+    .display-6 {
+        font-size: 2rem;
+        font-weight: 600;
+    }
+
+    @@media print {
+        .btn, .breadcrumb
+
+    {
+        display: none !important;
+    }
+
+    .card {
+        border: 1px solid #ddd !important;
+        box-shadow: none !important;
+    }
+
+    }
+</style>

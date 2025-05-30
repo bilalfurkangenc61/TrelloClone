@@ -1,0 +1,112 @@
+﻿@model TrelloClone.Models.Card
+@{
+    var teamMembers = (List<ApplicationUser>)ViewBag.TeamMembers;
+    var currentUserId = (string)ViewBag.CurrentUserId;
+}
+
+<div class="p-4">
+    <div class="modal-header">
+        <h5 id="cardTitle" contenteditable="true" class="modal-title">@Model.Title</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    </div>
+
+    <div class="modal-body">
+        <!-- Açıklama -->
+        <div class="mb-4">
+            <label class="form-label"><i class="fas fa-align-left me-1"></i>Açıklama</label>
+            <textarea id="cardDescription" class="form-control" rows="3">@Model.Description</textarea>
+            <button class="btn btn-sm btn-primary mt-2" onclick="saveCardDescription()">
+                Kaydet
+            </button>
+        </div>
+
+        <!-- Yorumlar -->
+        <div class="mb-4">
+            <label class="form-label"><i class="fas fa-comment me-1"></i>Yorumlar</label>
+            <div id="commentsContainer" style="max-height: 200px; overflow:auto;">
+                @foreach (var c in Model.Comments.OrderByDescending(c => c.CreatedAt))
+                {
+                    <div class="border-bottom pb-2 mb-2">
+                        <strong>@c.User.FirstName @c.User.LastName</strong>
+                        <small class="text-muted ms-2">@c.CreatedAt.ToString("dd.MM.yyyy HH:mm")</small>
+                        <div>@c.Content</div>
+                    </div>
+                }
+                @if (!Model.Comments.Any())
+                {
+                    <p class="text-muted text-center">Henüz yorum yok</p>
+                }
+            </div>
+            <div class="d-flex mt-2">
+                <textarea id="newComment" class="form-control me-2" rows="2" placeholder="Yorum yazın..."></textarea>
+                <button class="btn btn-success" onclick="addComment()">Ekle</button>
+            </div>
+        </div>
+
+        <!-- Son Tarih -->
+        <div class="mb-3">
+            <label class="form-label"><i class="fas fa-clock me-1"></i>Son Tarih</label>
+            <input type="datetime-local"
+                   id="cardDueDate"
+                   class="form-control"
+                   value="@(Model.DueDate?.ToString("yyyy-MM-dd'T'HH:mm"))"
+                   onchange="updateDueDate()" />
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function saveCardDescription() {
+            const desc = document.getElementById('cardDescription').value;
+            fetch('/Card/UpdateDescription', {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({ cardId: @Model.Id, description: desc })
+            })
+            .then(r=>r.json())
+            .then(x=> x.success
+                ? alert('Açıklama güncellendi')
+                : alert(x.message));
+        }
+
+        function addComment() {
+            const txt = document.getElementById('newComment').value.trim();
+            if (!txt) return;
+            fetch('/Card/AddComment', {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({ cardId: @Model.Id, content: txt })
+            })
+            .then(r=>r.json())
+            .then(x=>{
+                if (!x.success) return alert(x.message);
+                const c = x.comment;
+                const html = `
+                  <div class="border-bottom pb-2 mb-2">
+                    <strong>${c.user.firstName} ${c.user.lastName}</strong>
+                    <small class="text-muted ms-2">${c.createdAt}</small>
+                    <div>${c.content}</div>
+                  </div>`;
+                document.getElementById('commentsContainer').insertAdjacentHTML('afterbegin', html);
+                document.getElementById('newComment').value = '';
+            });
+        }
+
+        function updateDueDate() {
+            const val = document.getElementById('cardDueDate').value;
+            fetch('/Card/UpdateDueDate', {
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({
+                    cardId: @Model.Id,
+                    dueDate: val ? new Date(val) : null
+                })
+            })
+            .then(r=>r.json())
+            .then(x=> x.success
+                ? alert('Son tarih güncellendi')
+                : alert(x.message));
+        }
+    </script>
+}

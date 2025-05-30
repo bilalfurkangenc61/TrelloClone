@@ -1,0 +1,195 @@
+﻿@model List<TeamMember>
+@{
+    ViewData["Title"] = "Takımlarım";
+}
+
+<div class="container-fluid">
+    <!-- Sayfa Başlığı -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-primary mb-1">
+                <i class="fas fa-users me-2"></i>
+                Takımlarım
+            </h2>
+            <p class="text-muted mb-0">Üye olduğunuz takımları görüntüleyin ve yönetin</p>
+        </div>
+        <a href="@Url.Action("Create")" class="btn btn-trello-primary">
+            <i class="fas fa-plus me-1"></i>
+            Yeni Takım
+        </a>
+    </div>
+
+    @if (Model.Any())
+    {
+        <!-- Takım Kartları -->
+        <div class="row g-4">
+            @foreach (var membership in Model)
+            {
+                <div class="col-lg-4 col-md-6">
+                    <div class="card card-trello h-100 team-card">
+                        <div class="card-body">
+                            <!-- Takım Başlığı ve Rol -->
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <h5 class="card-title fw-bold mb-0">
+                                    @membership.Team.Name
+                                </h5>
+                                <span class="badge bg-@(membership.Role == UserRole.Admin ? "danger" : membership.Role == UserRole.Member ? "primary" : "secondary")">
+                                    @(membership.Role == UserRole.Admin ? "Admin" :
+                                        membership.Role == UserRole.Member ? "Üye" : "Misafir")
+                                </span>
+                            </div>
+
+                            <!-- Açıklama -->
+                            @if (!string.IsNullOrEmpty(membership.Team.Description))
+                            {
+                                <p class="card-text text-muted mb-3">
+                                    @membership.Team.Description
+                                </p>
+                            }
+
+                            <!-- İstatistikler -->
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <div class="stat-item text-center p-2">
+                                        <div class="fw-bold text-primary">@membership.Team.Members.Count(m => m.IsActive)</div>
+                                        <small class="text-muted">Üye</small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="stat-item text-center p-2">
+                                        <div class="fw-bold text-success">@membership.Team.Boards.Count</div>
+                                        <small class="text-muted">Pano</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Üye Avatarları -->
+                            <div class="mb-3">
+                                <small class="text-muted d-block mb-2">Takım Üyeleri:</small>
+                                <div class="d-flex flex-wrap">
+                                    @foreach (var member in membership.Team.Members.Where(m => m.IsActive).Take(5))
+                                    {
+                                        <div class="member-avatar me-1 mb-1" title="@member.User.FirstName @member.User.LastName">
+                                            @if (!string.IsNullOrEmpty(member.User.ProfilePicture))
+                                            {
+                                                <img src="@member.User.ProfilePicture" alt="@member.User.FirstName" class="rounded-circle" width="32" height="32">
+                                            }
+                                            else
+                                            {
+                                                <div class="avatar-placeholder rounded-circle d-flex align-items-center justify-content-center">
+                                                    @member.User.FirstName.Substring(0, 1).ToUpper()
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                    @if (membership.Team.Members.Count(m => m.IsActive) > 5)
+                                    {
+                                        <div class="member-avatar me-1 mb-1">
+                                            <div class="avatar-placeholder rounded-circle d-flex align-items-center justify-content-center">
+                                                +@(membership.Team.Members.Count(m => m.IsActive) - 5)
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+
+                            <!-- Katılma Tarihi -->
+                            <div class="mb-3">
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar me-1"></i>
+                                    @membership.JoinedAt.ToString("dd.MM.yyyy") tarihinde katıldınız
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- Kart Alt Kısmı - Eylemler -->
+                        <div class="card-footer bg-white border-top-0">
+                            <div class="d-flex gap-2">
+                                <a href="@Url.Action("Details", new { id = membership.Team.Id })"
+                                   class="btn btn-outline-primary btn-sm flex-fill">
+                                    <i class="fas fa-eye me-1"></i>
+                                    Görüntüle
+                                </a>
+                                @if (membership.Role == UserRole.Admin)
+                                {
+                                    <a href="@Url.Action("Edit", new { id = membership.Team.Id })"
+                                       class="btn btn-outline-secondary btn-sm">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <!-- Boş Durum -->
+        <div class="text-center py-5">
+            <div class="empty-state">
+                <i class="fas fa-users fa-4x text-muted mb-4"></i>
+                <h4 class="fw-bold mb-3">Henüz hiçbir takıma üye değilsiniz</h4>
+                <p class="text-muted mb-4">
+                    Proje yönetimini kolaylaştırmak için ilk takımınızı oluşturun
+                    veya mevcut bir takıma katılın.
+                </p>
+                <div class="d-flex justify-content-center gap-3">
+                    <a href="@Url.Action("Create")" class="btn btn-trello-primary btn-lg">
+                        <i class="fas fa-plus me-2"></i>
+                        İlk Takımımı Oluştur
+                    </a>
+                    <button class="btn btn-outline-primary btn-lg" onclick="alert('Takım arama özelliği yakında!')">
+                        <i class="fas fa-search me-2"></i>
+                        Takım Ara
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .team-card {
+        transition: all 0.3s ease;
+    }
+
+        .team-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+    .stat-item {
+        background-color: var(--trello-gray);
+        border-radius: 8px;
+    }
+
+    .avatar-placeholder {
+        width: 32px;
+        height: 32px;
+        background-color: var(--trello-blue);
+        color: white;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .empty-state {
+        max-width: 500px;
+        margin: 0 auto;
+    }
+
+    /* Responsive düzenlemeler */
+    @@media (max-width: 768px) {
+        .d-flex.gap-2
+
+    {
+        flex-direction: column;
+    }
+
+    .btn-sm {
+        padding: 0.5rem 1rem;
+    }
+
+    }
+</style>

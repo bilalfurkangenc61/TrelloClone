@@ -1,0 +1,217 @@
+﻿<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - TrelloClone</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- FontAwesome CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <!-- Site CSS -->
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+
+    <!-- Trello benzeri renkler ve stiller -->
+    <style>
+        :root {
+            --trello-blue: #0079bf;
+            --trello-blue-dark: #005a8b;
+            --trello-blue-light: #e4f0f6;
+            --trello-gray: #f4f5f7;
+            --trello-gray-dark: #ddd;
+            --trello-white: #ffffff;
+            --trello-text: #172b4d;
+            --trello-text-light: #5e6c84;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--trello-gray);
+            color: var(--trello-text);
+        }
+
+        .navbar-trello {
+            background-color: var(--trello-blue) !important;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+            .navbar-trello .navbar-brand,
+            .navbar-trello .nav-link {
+                color: white !important;
+                font-weight: 600;
+            }
+
+                .navbar-trello .nav-link:hover {
+                    background-color: var(--trello-blue-dark);
+                    border-radius: 4px;
+                }
+
+        .btn-trello-primary {
+            background-color: var(--trello-blue);
+            border-color: var(--trello-blue);
+            color: white;
+            font-weight: 600;
+            border-radius: 4px;
+        }
+
+            .btn-trello-primary:hover {
+                background-color: var(--trello-blue-dark);
+                border-color: var(--trello-blue-dark);
+            }
+
+        .card-trello {
+            border: none;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+
+        .main-content {
+            min-height: calc(100vh - 76px);
+            padding-top: 20px;
+        }
+
+        /* Responsive Navigation */
+        @@media (max-width: 768px) {
+            .navbar-collapse
+
+        {
+            background-color: var(--trello-blue-dark);
+            margin-top: 10px;
+            border-radius: 4px;
+            padding: 10px;
+        }
+
+        }
+    </style>
+</head>
+<body>
+    <!-- Ana Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-trello">
+        <div class="container-fluid">
+            <!-- Logo/Marka -->
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-trello me-2"></i>
+                TrelloClone
+            </a>
+
+            <!-- Mobile hamburger menu -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <!-- Navigation Links -->
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    @if (User.Identity.IsAuthenticated)
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link" href="/Dashboard">
+                                <i class="fas fa-home me-1"></i>
+                                Ana Sayfa
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/Board">
+                                <i class="fas fa-columns me-1"></i>
+                                Panolarım
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/Team">
+                                <i class="fas fa-users me-1"></i>
+                                Takımlarım
+                            </a>
+                        </li>
+                    }
+                </ul>
+
+                <!-- Sağ taraf - Kullanıcı menüsü -->
+                <ul class="navbar-nav">
+                    @if (User.Identity.IsAuthenticated)
+                    {
+                        <!-- Bildirimler -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link" href="#" id="notificationDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-bell"></i>
+                                <span class="badge bg-danger" id="notificationCount" style="font-size: 0.7em;">0</span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><h6 class="dropdown-header">Bildirimler</h6></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="#">Bildirim yok</a></li>
+                            </ul>
+                        </li>
+
+                        <!-- Profil menüsü -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="profileDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-user-circle me-1"></i>
+                                @User.Identity.Name
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <a class="dropdown-item" href="/Account/Profile">
+                                        <i class="fas fa-user me-2"></i>Profilim
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="/Account/Settings">
+                                        <i class="fas fa-cog me-2"></i>Ayarlar
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                                        <button type="submit" class="dropdown-item">
+                                            <i class="fas fa-sign-out-alt me-2"></i>Çıkış Yap
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </li>
+                    }
+                    else
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link" href="/Account/Login">
+                                <i class="fas fa-sign-in-alt me-1"></i>
+                                Giriş Yap
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/Account/Register">
+                                <i class="fas fa-user-plus me-1"></i>
+                                Kayıt Ol
+                            </a>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Ana İçerik Alanı -->
+    <main class="main-content">
+        @RenderBody()
+    </main>
+
+    <!-- Alt bilgi (footer) -->
+    <footer class="text-center py-3 mt-4" style="background-color: var(--trello-white); border-top: 1px solid var(--trello-gray-dark);">
+        <div class="container">
+            <span class="text-muted">&copy; 2024 TrelloClone. Tüm hakları saklıdır.</span>
+        </div>
+    </footer>
+
+    <!-- JavaScript dosyaları -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Kendi JavaScript dosyalarımız -->
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    <!-- Sayfa özel scriptleri -->
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

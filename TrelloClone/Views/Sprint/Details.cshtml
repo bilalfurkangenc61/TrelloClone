@@ -1,0 +1,643 @@
+﻿@using System.Linq
+@model TrelloClone.Models.Sprint
+@{
+    ViewData["Title"] = "Sprint Detayları - Debug";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            @if (Model != null)
+            {
+                <!-- DEBUG PANEL -->
+                <div class="alert alert-info mb-4">
+                    <h5><i class="fas fa-bug"></i> Debug Bilgileri</h5>
+                    <ul class="mb-0">
+                        <li><strong>Sprint ID:</strong> @Model.Id</li>
+                        <li><strong>Sprint Adı:</strong> @Model.Name</li>
+                        <li><strong>Board ID:</strong> @Model.BoardId</li>
+                        <li><strong>Board Adı:</strong> @(Model.Board?.Name ?? "NULL")</li>
+                        <li><strong>CardSprints Collection:</strong> @(Model.CardSprints != null ? "Mevcut" : "NULL")</li>
+                        <li><strong>CardSprints Count:</strong> @(Model.CardSprints?.Count ?? 0)</li>
+                        <li><strong>Sprint Status:</strong> @Model.Status</li>
+                    </ul>
+
+                    @if (Model.CardSprints != null && Model.CardSprints.Any())
+                    {
+                        <hr>
+                        <h6>CardSprints Details:</h6>
+                        <ul>
+                            @foreach (var cs in Model.CardSprints)
+                            {
+                                <li>
+                                    CardSprint ID: @cs.Id,
+                                    Card: @(cs.Card?.Title ?? "NULL"),
+                                    List: @(cs.Card?.List?.Name ?? "NULL")
+                                </li>
+                            }
+                        </ul>
+                    }
+
+                    <!-- Test Buttons -->
+                    <hr>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-info" onclick="testGetAvailableCards()">
+                            Test GetAvailableCards
+                        </button>
+                        <button class="btn btn-sm btn-warning" onclick="testAssignCard()">
+                            Test Assign Card
+                        </button>
+                        <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#debugModal">
+                            Manuel Kart Ekle
+                        </button>
+                    </div>
+                </div>
+
+                <!-- NORMAL SPRINT CONTENT -->
+                <!-- Sprint Header -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2 class="mb-2">@Model.Name</h2>
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb">
+                                <li class="breadcrumb-item">
+                                    <a asp-controller="Board" asp-action="Index">Panolar</a>
+                                </li>
+                                <li class="breadcrumb-item">
+                                    <a asp-controller="Board" asp-action="Details" asp-route-id="@Model.BoardId">@(Model.Board?.Name ?? "Pano")</a>
+                                </li>
+                                <li class="breadcrumb-item">
+                                    <a asp-controller="Sprint" asp-action="Index" asp-route-boardId="@Model.BoardId">Sprint'ler</a>
+                                </li>
+                                <li class="breadcrumb-item active" aria-current="page">@Model.Name</li>
+                            </ol>
+                        </nav>
+                    </div>
+                    <div>
+                        @if (Model.Status == TrelloClone.Models.SprintStatus.Planning)
+                        {
+                            <button class="btn btn-success me-2" onclick="startSprint(@Model.Id)">
+                                <i class="fas fa-play"></i> Sprint'i Başlat
+                            </button>
+                        }
+                        else if (Model.Status == TrelloClone.Models.SprintStatus.Active)
+                        {
+                            <button class="btn btn-warning me-2" onclick="completeSprint(@Model.Id)">
+                                <i class="fas fa-stop"></i> Sprint'i Bitir
+                            </button>
+                        }
+
+                        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-primary me-2">
+                            <i class="fas fa-edit"></i> Düzenle
+                        </a>
+
+                        <a asp-action="Report" asp-route-id="@Model.Id" class="btn btn-outline-info">
+                            <i class="fas fa-chart-bar"></i> Rapor
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Sprint Info Cards -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">Durum</h5>
+                                @{
+                                    var statusClass = Model.Status switch
+                                    {
+                                        TrelloClone.Models.SprintStatus.Planning => "badge bg-secondary",
+                                        TrelloClone.Models.SprintStatus.Active => "badge bg-success",
+                                        TrelloClone.Models.SprintStatus.Completed => "badge bg-primary",
+                                        TrelloClone.Models.SprintStatus.Cancelled => "badge bg-danger",
+                                        _ => "badge bg-secondary"
+                                    };
+
+                                    var statusText = Model.Status switch
+                                    {
+                                        TrelloClone.Models.SprintStatus.Planning => "Planlama",
+                                        TrelloClone.Models.SprintStatus.Active => "Aktif",
+                                        TrelloClone.Models.SprintStatus.Completed => "Tamamlandı",
+                                        TrelloClone.Models.SprintStatus.Cancelled => "İptal Edildi",
+                                        _ => "Bilinmeyen"
+                                    };
+                                }
+                                <span class="@statusClass fs-6">@statusText</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">Başlangıç</h5>
+                                <p class="card-text">@Model.StartDate.ToString("dd.MM.yyyy")</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">Bitiş</h5>
+                                <p class="card-text">@Model.EndDate.ToString("dd.MM.yyyy")</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">Süre</h5>
+                                <p class="card-text">@((Model.EndDate - Model.StartDate).Days) gün</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sprint Description -->
+                @if (!string.IsNullOrEmpty(Model.Description))
+                {
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-info-circle"></i> Açıklama</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">@Model.Description</p>
+                        </div>
+                    </div>
+                }
+
+                <!-- Sprint Cards -->
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-tasks"></i> Sprint Kartları
+                            <span class="badge bg-info">@(Model.CardSprints?.Count ?? 0)</span>
+                        </h5>
+                        @if (Model.Status == TrelloClone.Models.SprintStatus.Planning || Model.Status == TrelloClone.Models.SprintStatus.Active)
+                        {
+                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addCardModal">
+                                <i class="fas fa-plus"></i> Kart Ekle
+                            </button>
+                        }
+                    </div>
+                    <div class="card-body">
+                        @if (Model.CardSprints?.Any() == true)
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Kart</th>
+                                            <th>Liste</th>
+                                            <th>Atanan Kişiler</th>
+                                            <th>Durum</th>
+                                            <th>İşlemler</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var cardSprint in Model.CardSprints.Where(cs => cs.Card != null).OrderBy(cs => cs.Card?.List?.Name ?? ""))
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <a asp-controller="Card" asp-action="Details" asp-route-id="@cardSprint.Card.Id"
+                                                       class="text-decoration-none">
+                                                        @cardSprint.Card.Title
+                                                    </a>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-light text-dark">@(cardSprint.Card?.List?.Name ?? "Liste belirtilmemiş")</span>
+                                                </td>
+                                                <td>
+                                                    @if (cardSprint.Card?.Assignments?.Any() == true)
+                                                    {
+                                                        @foreach (var assignment in cardSprint.Card.Assignments.Take(3))
+                                                        {
+                                                            <span class="badge bg-secondary me-1">@(assignment.User?.UserName ?? "Bilinmeyen")</span>
+                                                        }
+                                                        @if (cardSprint.Card.Assignments.Count > 3)
+                                                        {
+                                                            <span class="text-muted small">+@(cardSprint.Card.Assignments.Count - 3) diğer</span>
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-muted">Atanmamış</span>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    @{
+                                                        var listName = cardSprint.Card?.List?.Name?.ToLower() ?? "";
+                                                        var isCompleted = listName.Contains("tamamla") || listName.Contains("done") || listName.Contains("finish");
+                                                    }
+                                                    @if (isCompleted)
+                                                    {
+                                                        <span class="badge bg-success">Tamamlandı</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge bg-warning">Devam Ediyor</span>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    @if (Model.Status != TrelloClone.Models.SprintStatus.Completed)
+                                                    {
+                                                        <button class="btn btn-sm btn-outline-danger"
+                                                                onclick="removeCardFromSprint(@cardSprint.Card.Id, @Model.Id)">
+                                                            <i class="fas fa-times"></i>
+                                                        </button>
+                                                    }
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center py-4">
+                                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">Bu sprint'e henüz kart eklenmemiş.</p>
+                                @if (Model.Status == TrelloClone.Models.SprintStatus.Planning || Model.Status == TrelloClone.Models.SprintStatus.Active)
+                                {
+                                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCardModal">
+                                        <i class="fas fa-plus"></i> İlk Kartı Ekle
+                                    </button>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-danger">Sprint bulunamadı.</div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Add Card Modal -->
+<div class="modal fade" id="addCardModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Sprint'e Kart Ekle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="cardSelect" class="form-label">Kart Seçin:</label>
+                    <select class="form-select" id="cardSelect">
+                        <option value="">Kart seçin...</option>
+                    </select>
+                </div>
+                <div id="cardLoadingStatus" class="text-muted small">
+                    Kartlar yükleniyor...
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-primary" onclick="assignCardToSprint()">Ekle</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Debug Modal - Manuel Kart Ekleme -->
+<div class="modal fade" id="debugModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Debug - Manuel Kart Ekle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="debugCardId" class="form-label">Card ID:</label>
+                    <input type="number" class="form-control" id="debugCardId" placeholder="Örn: 1">
+                </div>
+                <div class="mb-3">
+                    <label for="debugSprintId" class="form-label">Sprint ID:</label>
+                    <input type="number" class="form-control" id="debugSprintId" value="@Model.Id" readonly>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-warning" onclick="debugAssignCard()">Manuel Ekle</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    console.log('Debug Sprint Details loaded');
+                    console.log('Sprint ID:', @Model.Id);
+                    console.log('Board ID:', @Model.BoardId);
+                });
+
+                // Sprint başlatma
+                function startSprint(sprintId) {
+                    if (confirm('Sprint\'i başlatmak istediğinizden emin misiniz?')) {
+                        fetch('@Url.Action("StartSprint", "Sprint")', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                            },
+                            body: `id=${sprintId}`
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                alert('Başarılı: ' + data.message);
+                                setTimeout(() => location.reload(), 1000);
+                            } else {
+                                alert('Hata: ' + data.message);
+                            }
+                        })
+                        .catch(error => {
+                            alert('Bir hata oluştu: ' + error.message);
+                        });
+                    }
+                }
+
+                // Sprint bitirme
+                function completeSprint(sprintId) {
+                    if (confirm('Sprint\'i bitirmek istediğinizden emin misiniz?')) {
+                        fetch('@Url.Action("CompleteSprint", "Sprint")', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                            },
+                            body: `id=${sprintId}`
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                alert('Başarılı: ' + data.message);
+
+                                if (data.report) {
+                                    setTimeout(() => {
+                                        showSprintReport(data.report);
+                                    }, 1500);
+                                }
+
+                                setTimeout(() => location.reload(), 3000);
+                            } else {
+                                alert('Hata: ' + data.message);
+                            }
+                        })
+                        .catch(error => {
+                            alert('Bir hata oluştu: ' + error.message);
+                        });
+                    }
+                }
+
+                // Sprint raporu göster
+                function showSprintReport(report) {
+                    alert(`Sprint Raporu:
+        Toplam Kart: ${report.totalCards}
+        Tamamlanan: ${report.completedCards}
+        Başarı Oranı: %${report.completionRate}`);
+                }
+
+                // Sprint'ten kart kaldırma
+                function removeCardFromSprint(cardId, sprintId) {
+                    if (confirm('Kartı sprint\'ten kaldırmak istediğinizden emin misiniz?')) {
+                        fetch('@Url.Action("RemoveCardFromSprint", "Sprint")', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ cardId: cardId, sprintId: sprintId })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                alert('Başarılı: ' + data.message);
+                                setTimeout(() => location.reload(), 1000);
+                            } else {
+                                alert('Hata: ' + data.message);
+                            }
+                        })
+                        .catch(error => {
+                            alert('Bir hata oluştu: ' + error.message);
+                        });
+                    }
+                }
+
+                // Test GetAvailableCards - Vanilla JavaScript
+                function testGetAvailableCards() {
+                    console.log('Testing GetAvailableCards...');
+
+                    fetch('@Url.Action("GetAvailableCards", "Sprint")?boardId=@Model.BoardId')
+                        .then(response => {
+                            console.log('Response status:', response.status);
+                            console.log('Response headers:', response.headers);
+                            if (!response.ok) {
+                                throw new Error(`HTTP ${response.status} - ${response.statusText}`);
+                            }
+                            return response.json();
+                        })
+                        .then(cards => {
+                            console.log('GetAvailableCards success:', cards);
+                            alert('GetAvailableCards çalışıyor! Kart sayısı: ' + (cards ? cards.length : 0) + '\n\nDetaylar console\'da.');
+                        })
+                        .catch(error => {
+                            console.error('GetAvailableCards failed:', error);
+                            alert('GetAvailableCards HATASI: ' + error.message);
+                        });
+                }
+
+                // Test Assign Card - Vanilla JavaScript
+                function testAssignCard() {
+                    if (!@Model.Id) {
+                        alert('Sprint ID bulunamadı');
+                        return;
+                    }
+
+                    const testData = {
+                        cardId: 1, // Test için
+                        sprintId: @Model.Id
+                    };
+
+                    console.log('Testing AssignCard with:', testData);
+
+                    fetch('@Url.Action("AssignCardToSprint", "Sprint")', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(testData)
+                    })
+                    .then(response => {
+                        console.log('Response status:', response.status);
+                        if (!response.ok) {
+                            return response.text().then(text => {
+                                throw new Error(`HTTP ${response.status}: ${text}`);
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('AssignCard response:', data);
+                        alert('AssignCard test response: ' + JSON.stringify(data));
+                    })
+                    .catch(error => {
+                        console.error('AssignCard failed:', error);
+                        alert('AssignCard HATASI: ' + error.message);
+                    });
+                }
+
+                // Debug Manuel Kart Ekleme
+                function debugAssignCard() {
+                    const cardId = document.getElementById('debugCardId').value;
+                    const sprintId = document.getElementById('debugSprintId').value;
+
+                    if (!cardId) {
+                        alert('Card ID girin');
+                        return;
+                    }
+
+                    const data = {
+                        cardId: parseInt(cardId),
+                        sprintId: parseInt(sprintId)
+                    };
+
+                    fetch('@Url.Action("AssignCardToSprint", "Sprint")', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(data)
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.text().then(text => {
+                                throw new Error(`HTTP ${response.status}: ${text}`);
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        alert('Sonuç: ' + JSON.stringify(data));
+                        if (data.success) {
+                            location.reload();
+                        }
+                    })
+                    .catch(error => {
+                        alert('Hata: ' + error.message);
+                    });
+                }
+
+                // Modal açıldığında kartları yükle
+                function loadAvailableCards() {
+                    const cardSelect = document.getElementById('cardSelect');
+                    const loadingStatus = document.getElementById('cardLoadingStatus');
+
+                    cardSelect.innerHTML = '<option value="">Yükleniyor...</option>';
+                    loadingStatus.textContent = 'Kartlar yükleniyor...';
+
+                    fetch('@Url.Action("GetAvailableCards", "Sprint")?boardId=@Model.BoardId')
+                        .then(response => {
+                            console.log('Load cards response status:', response.status);
+                            if (!response.ok) {
+                                throw new Error('HTTP ' + response.status);
+                            }
+                            return response.json();
+                        })
+                        .then(cards => {
+                            console.log('Available cards loaded:', cards);
+
+                            let options = '<option value="">Kart seçin...</option>';
+
+                            if (cards && cards.length > 0) {
+                                cards.forEach(function(card) {
+                                    options += `<option value="${card.id}">${card.title} (${card.listName})</option>`;
+                                });
+                                loadingStatus.innerHTML = `<i class="fas fa-check text-success"></i> ${cards.length} kart bulundu`;
+                            } else {
+                                options = '<option value="">Atanabilir kart bulunamadı</option>';
+                                loadingStatus.innerHTML = '<i class="fas fa-exclamation-triangle text-warning"></i> Atanabilir kart bulunamadı';
+                            }
+
+                            cardSelect.innerHTML = options;
+                        })
+                        .catch(error => {
+                            console.error('Load cards failed:', error);
+                            cardSelect.innerHTML = '<option value="">Kartlar yüklenemedi</option>';
+                            loadingStatus.innerHTML = `<i class="fas fa-times text-danger"></i> Hata: ${error.message}`;
+                        });
+                }
+
+                function assignCardToSprint() {
+                    const cardSelect = document.getElementById('cardSelect');
+                    const cardId = cardSelect.value;
+                    const sprintId = @Model.Id;
+
+                    if (!cardId) {
+                        alert('Lütfen bir kart seçin.');
+                        return;
+                    }
+
+                    const assignBtn = document.querySelector('#addCardModal .btn-primary');
+                    assignBtn.disabled = true;
+                    assignBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Ekleniyor...';
+
+                    fetch('@Url.Action("AssignCardToSprint", "Sprint")', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ cardId: parseInt(cardId), sprintId: sprintId })
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.text().then(text => {
+                                throw new Error(`HTTP ${response.status}: ${text}`);
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        alert('Sonuç: ' + JSON.stringify(data));
+                        if (data.success) {
+                            // Modal'ı kapat
+                            const modal = bootstrap.Modal.getInstance(document.getElementById('addCardModal'));
+                            if (modal) modal.hide();
+
+                            setTimeout(() => location.reload(), 1000);
+                        }
+                    })
+                    .catch(error => {
+                        alert('Hata: ' + error.message);
+                    })
+                    .finally(() => {
+                        assignBtn.disabled = false;
+                        assignBtn.innerHTML = 'Ekle';
+                    });
+                }
+
+                // Modal event listeners
+                document.addEventListener('DOMContentLoaded', function() {
+                    const addCardModal = document.getElementById('addCardModal');
+                    if (addCardModal) {
+                        addCardModal.addEventListener('show.bs.modal', function() {
+                            loadAvailableCards();
+                        });
+                    }
+                });
+    </script>
+}
+
+<style>
+    .alert-info {
+        border-left: 4px solid #007bff;
+    }
+
+    .btn-sm {
+        font-size: 0.8rem;
+    }
+</style>

@@ -1,0 +1,270 @@
+﻿@model LoginViewModel
+@{
+    ViewData["Title"] = "Giriş Yap";
+}
+
+<div class="container-fluid">
+    <div class="row min-vh-100">
+        <!-- Sol taraf - Form -->
+        <div class="col-lg-6 d-flex align-items-center">
+            <div class="w-100 p-4 p-lg-5">
+                <div class="auth-form mx-auto" style="max-width: 400px;">
+                    <!-- Logo ve Başlık -->
+                    <div class="text-center mb-4">
+                        <h1 class="h2 fw-bold text-primary">
+                            <i class="fas fa-trello me-2"></i>
+                            TrelloClone
+                        </h1>
+                        <p class="text-muted">Hesabınıza giriş yapın</p>
+                    </div>
+
+                    <!-- Giriş Formu -->
+                    <form asp-action="Login" method="post" class="needs-validation" novalidate>
+                        <div asp-validation-summary="All" class="alert alert-danger d-none"></div>
+
+                        <!-- E-posta -->
+                        <div class="mb-3">
+                            <label asp-for="Email" class="form-label">
+                                <i class="fas fa-envelope me-1"></i>
+                                E-posta
+                            </label>
+                            <input asp-for="Email" type="email" class="form-control form-control-lg"
+                                   placeholder="ornek@email.com" required>
+                            <span asp-validation-for="Email" class="text-danger"></span>
+                        </div>
+
+                        <!-- Şifre -->
+                        <div class="mb-3">
+                            <label asp-for="Password" class="form-label">
+                                <i class="fas fa-lock me-1"></i>
+                                Şifre
+                            </label>
+                            <div class="input-group">
+                                <input asp-for="Password" type="password" class="form-control form-control-lg"
+                                       placeholder="Şifrenizi girin" required id="password">
+                                <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <span asp-validation-for="Password" class="text-danger"></span>
+                        </div>
+
+                        <!-- Beni Hatırla ve Şifremi Unuttum -->
+                        <div class="mb-4 d-flex justify-content-between align-items-center">
+                            <div class="form-check">
+                                <input asp-for="RememberMe" class="form-check-input" type="checkbox">
+                                <label asp-for="RememberMe" class="form-check-label">
+                                    Beni Hatırla
+                                </label>
+                            </div>
+                            <a href="#" class="text-decoration-none small">
+                                Şifremi Unuttum?
+                            </a>
+                        </div>
+
+                        <!-- Giriş Butonu -->
+                        <button type="submit" class="btn btn-trello-primary btn-lg w-100 mb-3">
+                            <i class="fas fa-sign-in-alt me-2"></i>
+                            Giriş Yap
+                        </button>
+
+                        <!-- Kayıt Ol Linki -->
+                        <div class="text-center">
+                            <p class="mb-0">
+                                Hesabınız yok mu?
+                                <a href="@Url.Action("Register", "Account")" class="text-decoration-none fw-semibold">
+                                    Kayıt Olun
+                                </a>
+                            </p>
+                        </div>
+                    </form>
+
+                    <!-- Demo Hesaplar -->
+                    <div class="mt-4 pt-4 border-top">
+                        <small class="text-muted d-block text-center mb-3">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Demo hesaplarla hızlıca test edin:
+                        </small>
+
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <button type="button" class="btn btn-outline-secondary btn-sm w-100"
+                                        onclick="loginAsDemo('admin@demo.com')">
+                                    <i class="fas fa-crown me-1"></i>
+                                    Admin
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <button type="button" class="btn btn-outline-secondary btn-sm w-100"
+                                        onclick="loginAsDemo('user@demo.com')">
+                                    <i class="fas fa-user me-1"></i>
+                                    Kullanıcı
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sağ taraf - Görsel/Tanıtım -->
+        <div class="col-lg-6 d-none d-lg-flex align-items-center justify-content-center"
+             style="background: linear-gradient(135deg, var(--trello-blue-dark), var(--trello-blue));">
+            <div class="text-center text-white p-5">
+                <div class="mb-4">
+                    <i class="fas fa-chart-line fa-5x mb-4"></i>
+                    <h2 class="display-6 fw-bold">Hoş Geldiniz!</h2>
+                    <p class="lead">
+                        Projelerinize devam edin ve takımınızla
+                        etkili işbirliği yapın.
+                    </p>
+                </div>
+
+                <!-- İstatistikler -->
+                <div class="row g-3 mt-4">
+                    <div class="col-4">
+                        <div class="p-3">
+                            <h3 class="h4 fw-bold">1000+</h3>
+                            <small>Aktif Kullanıcı</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="p-3">
+                            <h3 class="h4 fw-bold">500+</h3>
+                            <small>Proje</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="p-3">
+                            <h3 class="h4 fw-bold">5000+</h3>
+                            <small>Tamamlanan Görev</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Son güncellemeler -->
+                <div class="mt-4 p-3 rounded" style="background: rgba(255,255,255,0.1);">
+                    <h6 class="fw-bold mb-2">
+                        <i class="fas fa-sparkles me-1"></i>
+                        Yeni Özellikler
+                    </h6>
+                    <ul class="list-unstyled mb-0 small text-start">
+                        <li class="mb-1">
+                            <i class="fas fa-check me-2 text-success"></i>
+                            Sprint yönetimi eklendi
+                        </li>
+                        <li class="mb-1">
+                            <i class="fas fa-check me-2 text-success"></i>
+                            Gelişmiş bildirim sistemi
+                        </li>
+                        <li class="mb-0">
+                            <i class="fas fa-check me-2 text-success"></i>
+                            Karanlık mod desteği
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Şifre göster/gizle
+        document.getElementById('togglePassword').addEventListener('click', function() {
+            const password = document.getElementById('password');
+            const icon = this.querySelector('i');
+
+            if (password.type === 'password') {
+                password.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                password.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        });
+
+        // Demo hesap girişi
+        function loginAsDemo(email) {
+            document.getElementById('Email').value = email;
+            document.getElementById('Password').value = 'Demo123!';
+
+            // Form submit
+            document.querySelector('form').submit();
+        }
+
+        // Form doğrulama
+        (function() {
+            'use strict';
+            window.addEventListener('load', function() {
+                var forms = document.getElementsByClassName('needs-validation');
+                var validation = Array.prototype.filter.call(forms, function(form) {
+                    form.addEventListener('submit', function(event) {
+                        if (form.checkValidity() === false) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                        }
+                        form.classList.add('was-validated');
+                    }, false);
+                });
+            }, false);
+        })();
+
+        // Validation summary'yi göster/gizle
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <text>
+                document.querySelector('.alert-danger').classList.remove('d-none');
+            </text>
+        }
+    </script>
+}
+
+<style>
+    .auth-form {
+        animation: fadeInUp 0.6s ease-out;
+    }
+
+    @@keyframes fadeInUp {
+        from
+
+    {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    }
+
+    .form-control:focus {
+        border-color: var(--trello-blue);
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 191, 0.25);
+    }
+
+    .btn-trello-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    /* Demo butonlar için hover efekti */
+    .btn-outline-secondary:hover {
+        transform: scale(1.02);
+    }
+
+    /* Responsive düzenlemeler */
+    @@media (max-width: 991px) {
+        .min-vh-100
+
+    {
+        min-height: auto;
+        padding: 40px 0;
+    }
+
+    }
+</style>

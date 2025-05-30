@@ -1,0 +1,454 @@
+﻿@model CreateSprintViewModel
+@{
+    ViewData["Title"] = "Yeni Sprint Oluştur";
+}
+
+<!-- Sprint Oluşturma Sayfası -->
+<div class="container py-4">
+    <!-- Sayfa Başlığı -->
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="@Url.Action("Index", "Board")">
+                            <i class="fas fa-columns me-1"></i>
+                            Panolarım
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="@Url.Action("Details", "Board", new { id = Model.BoardId })">
+                            @Model.BoardName
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="@Url.Action("Index", new { boardId = Model.BoardId })">
+                            Sprint Yönetimi
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active">Yeni Sprint</li>
+                </ol>
+            </nav>
+
+            <div class="text-center mb-4">
+                <i class="fas fa-rocket fa-3x text-primary mb-3"></i>
+                <h2 class="fw-bold text-trello-dark">Yeni Sprint Oluştur</h2>
+                <p class="text-muted">@Model.BoardName panosunda yeni bir sprint başlatın</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form -->
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <form asp-action="Create" method="post" class="needs-validation" novalidate>
+                <input type="hidden" asp-for="BoardId" />
+                <input type="hidden" asp-for="BoardName" />
+
+                <div class="card card-trello">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Sprint Bilgileri
+                        </h5>
+                    </div>
+
+                    <div class="card-body">
+                        <!-- Sprint Adı -->
+                        <div class="mb-4">
+                            <label asp-for="Name" class="form-label fw-medium">
+                                <i class="fas fa-tag me-1"></i>
+                                Sprint Adı *
+                            </label>
+                            <input asp-for="Name"
+                                   class="form-control form-control-lg"
+                                   placeholder="Örn: Sprint 1 - Kullanıcı Arayüzü"
+                                   required />
+                            <span asp-validation-for="Name" class="text-danger"></span>
+                            <div class="form-text">Sprint'inizi tanımlayacak açıklayıcı bir ad verin</div>
+                        </div>
+
+                        <!-- Sprint Açıklaması -->
+                        <div class="mb-4">
+                            <label asp-for="Description" class="form-label fw-medium">
+                                <i class="fas fa-align-left me-1"></i>
+                                Açıklama
+                            </label>
+                            <textarea asp-for="Description"
+                                      class="form-control"
+                                      rows="4"
+                                      placeholder="Bu sprint'te hangi hedeflere ulaşmayı planlıyorsunuz?"></textarea>
+                            <span asp-validation-for="Description" class="text-danger"></span>
+                            <div class="form-text">Sprint hedeflerinizi ve kapsamını açıklayın</div>
+                        </div>
+
+                        <!-- Sprint Tarihleri -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-4">
+                                    <label asp-for="StartDate" class="form-label fw-medium">
+                                        <i class="fas fa-calendar-alt me-1"></i>
+                                        Başlangıç Tarihi *
+                                    </label>
+                                    <input asp-for="StartDate"
+                                           type="date"
+                                           class="form-control"
+                                           required />
+                                    <span asp-validation-for="StartDate" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-4">
+                                    <label asp-for="EndDate" class="form-label fw-medium">
+                                        <i class="fas fa-calendar-check me-1"></i>
+                                        Bitiş Tarihi *
+                                    </label>
+                                    <input asp-for="EndDate"
+                                           type="date"
+                                           class="form-control"
+                                           required />
+                                    <span asp-validation-for="EndDate" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sprint Süresi Hesaplayıcı -->
+                        <div class="sprint-duration-info mb-4">
+                            <div class="alert alert-info border-0" style="background: rgba(0, 123, 255, 0.1);">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-clock text-info fa-lg me-3"></i>
+                                    <div>
+                                        <strong>Sprint Süresi: <span id="sprintDuration">-</span></strong>
+                                        <div class="small text-muted mt-1">
+                                            Önerilen sprint süresi 1-4 hafta arasındadır
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sprint İpuçları -->
+                        <div class="sprint-tips">
+                            <h6 class="fw-bold text-trello-dark mb-3">
+                                <i class="fas fa-lightbulb me-2 text-warning"></i>
+                                Sprint İpuçları
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="tip-card p-3 bg-light rounded">
+                                        <div class="d-flex">
+                                            <i class="fas fa-target text-primary me-2 mt-1"></i>
+                                            <div>
+                                                <strong>Hedef Belirleyin</strong>
+                                                <p class="small text-muted mb-0 mt-1">
+                                                    Sprint sonunda ulaşmak istediğiniz somut hedefi tanımlayın
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="tip-card p-3 bg-light rounded">
+                                        <div class="d-flex">
+                                            <i class="fas fa-tasks text-success me-2 mt-1"></i>
+                                            <div>
+                                                <strong>Görevleri Böl</strong>
+                                                <p class="small text-muted mb-0 mt-1">
+                                                    Büyük görevleri küçük, yönetilebilir parçalara bölün
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="tip-card p-3 bg-light rounded">
+                                        <div class="d-flex">
+                                            <i class="fas fa-users text-info me-2 mt-1"></i>
+                                            <div>
+                                                <strong>Takımla Planlayın</strong>
+                                                <p class="small text-muted mb-0 mt-1">
+                                                    Sprint planlamasını tüm takımla birlikte yapın
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="tip-card p-3 bg-light rounded">
+                                        <div class="d-flex">
+                                            <i class="fas fa-chart-line text-warning me-2 mt-1"></i>
+                                            <div>
+                                                <strong>İlerlemeyi Takip Et</strong>
+                                                <p class="small text-muted mb-0 mt-1">
+                                                    Sprint boyunca günlük ilerlemelerinizi kontrol edin
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-footer bg-transparent">
+                        <div class="d-flex justify-content-between">
+                            <a href="@Url.Action("Index", new { boardId = Model.BoardId })"
+                               class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>
+                                Geri Dön
+                            </a>
+                            <div>
+                                <button type="submit" class="btn btn-trello-primary btn-lg">
+                                    <i class="fas fa-rocket me-2"></i>
+                                    Sprint Oluştur
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Hızlı Sprint Şablonları -->
+    <div class="row mt-4">
+        <div class="col-lg-8 mx-auto">
+            <div class="card card-trello">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-magic me-2"></i>
+                        Hızlı Sprint Şablonları
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <button type="button"
+                                    class="btn btn-outline-primary w-100 template-btn"
+                                    onclick="applyTemplate('1-week')">
+                                <div class="text-center">
+                                    <i class="fas fa-calendar-week fa-2x mb-2"></i>
+                                    <div class="fw-bold">1 Hafta Sprint</div>
+                                    <small class="text-muted">Hızlı iterasyon</small>
+                                </div>
+                            </button>
+                        </div>
+                        <div class="col-md-4">
+                            <button type="button"
+                                    class="btn btn-outline-success w-100 template-btn"
+                                    onclick="applyTemplate('2-week')">
+                                <div class="text-center">
+                                    <i class="fas fa-calendar-alt fa-2x mb-2"></i>
+                                    <div class="fw-bold">2 Hafta Sprint</div>
+                                    <small class="text-muted">Standart süre</small>
+                                </div>
+                            </button>
+                        </div>
+                        <div class="col-md-4">
+                            <button type="button"
+                                    class="btn btn-outline-warning w-100 template-btn"
+                                    onclick="applyTemplate('4-week')">
+                                <div class="text-center">
+                                    <i class="fas fa-calendar fa-2x mb-2"></i>
+                                    <div class="fw-bold">4 Hafta Sprint</div>
+                                    <small class="text-muted">Uzun vadeli</small>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            calculateSprintDuration();
+
+            // Tarih değişikliklerini dinle
+            document.getElementById('StartDate').addEventListener('change', calculateSprintDuration);
+            document.getElementById('EndDate').addEventListener('change', calculateSprintDuration);
+        });
+
+        // Sprint süresini hesapla
+        function calculateSprintDuration() {
+            const startDate = document.getElementById('StartDate').value;
+            const endDate = document.getElementById('EndDate').value;
+            const durationElement = document.getElementById('sprintDuration');
+
+            if (startDate && endDate) {
+                const start = new Date(startDate);
+                const end = new Date(endDate);
+                const diffTime = Math.abs(end - start);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                const diffWeeks = Math.round(diffDays / 7 * 10) / 10;
+
+                if (diffDays > 0) {
+                    durationElement.textContent = `${diffDays} gün (${diffWeeks} hafta)`;
+
+                    // Uyarı mesajları
+                    const alertContainer = document.querySelector('.sprint-duration-info .alert');
+                    alertContainer.className = 'alert border-0';
+
+                    if (diffDays > 28) {
+                        alertContainer.classList.add('alert-warning');
+                        alertContainer.style.background = 'rgba(255, 193, 7, 0.1)';
+                        alertContainer.querySelector('i').className = 'fas fa-exclamation-triangle text-warning fa-lg me-3';
+                        alertContainer.querySelector('strong').innerHTML = `Sprint Süresi: ${diffDays} gün - <span class="text-warning">Çok uzun</span>`;
+                    } else if (diffDays < 7) {
+                        alertContainer.classList.add('alert-info');
+                        alertContainer.style.background = 'rgba(23, 162, 184, 0.1)';
+                        alertContainer.querySelector('i').className = 'fas fa-info-circle text-info fa-lg me-3';
+                        alertContainer.querySelector('strong').innerHTML = `Sprint Süresi: ${diffDays} gün - <span class="text-info">Kısa sprint</span>`;
+                    } else {
+                        alertContainer.classList.add('alert-success');
+                        alertContainer.style.background = 'rgba(40, 167, 69, 0.1)';
+                        alertContainer.querySelector('i').className = 'fas fa-check-circle text-success fa-lg me-3';
+                        alertContainer.querySelector('strong').innerHTML = `Sprint Süresi: ${diffDays} gün - <span class="text-success">İdeal süre</span>`;
+                    }
+                } else {
+                    durationElement.textContent = '-';
+                }
+            } else {
+                durationElement.textContent = '-';
+            }
+        }
+
+        // Sprint şablonları
+        function applyTemplate(templateType) {
+            const today = new Date();
+            const startInput = document.getElementById('StartDate');
+            const endInput = document.getElementById('EndDate');
+            const nameInput = document.getElementById('Name');
+
+            // Başlangıç tarihi bugün
+            startInput.value = today.toISOString().split('T')[0];
+
+            // Bitiş tarihini şablona göre ayarla
+            let endDate = new Date(today);
+            let sprintName = '';
+
+            switch (templateType) {
+                case '1-week':
+                    endDate.setDate(today.getDate() + 7);
+                    sprintName = '1 Haftalık Sprint';
+                    break;
+                case '2-week':
+                    endDate.setDate(today.getDate() + 14);
+                    sprintName = '2 Haftalık Sprint';
+                    break;
+                case '4-week':
+                    endDate.setDate(today.getDate() + 28);
+                    sprintName = '4 Haftalık Sprint';
+                    break;
+            }
+
+            endInput.value = endDate.toISOString().split('T')[0];
+
+            // Sprint adı yoksa şablon adını kullan
+            if (!nameInput.value.trim()) {
+                nameInput.value = sprintName;
+            }
+
+            // Süreyi yeniden hesapla
+            calculateSprintDuration();
+
+            // Görsel geri bildirim
+            showNotification(`${sprintName} şablonu uygulandı`, 'success');
+        }
+
+        // Bildirim gösterimi
+        function showNotification(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `alert alert-${type === 'error' ? 'danger' : type === 'success' ? 'success' : 'info'} position-fixed`;
+            toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            toast.textContent = message;
+
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.remove();
+            }, 2000);
+        }
+
+        // Form validation
+        (function() {
+            'use strict';
+            window.addEventListener('load', function() {
+                var forms = document.getElementsByClassName('needs-validation');
+                var validation = Array.prototype.filter.call(forms, function(form) {
+                    form.addEventListener('submit', function(event) {
+                        if (form.checkValidity() === false) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                        }
+                        form.classList.add('was-validated');
+                    }, false);
+                });
+            }, false);
+        })();
+    </script>
+}
+
+<style>
+    .template-btn {
+        padding: 1.5rem 1rem;
+        height: auto;
+        border: 2px dashed #dee2e6;
+        transition: all 0.3s ease;
+    }
+
+        .template-btn:hover {
+            border-style: solid;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+    .tip-card {
+        transition: all 0.3s ease;
+        border: 1px solid transparent;
+    }
+
+        .tip-card:hover {
+            background: white !important;
+            border-color: var(--trello-blue);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+    .form-control:focus {
+        border-color: var(--trello-blue);
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+
+    .card-trello {
+        border: 1px solid #dee2e6;
+        border-radius: 12px;
+    }
+
+    .btn-trello-primary {
+        background-color: var(--trello-blue);
+        border-color: var(--trello-blue);
+        color: white;
+        font-weight: 600;
+    }
+
+        .btn-trello-primary:hover {
+            background-color: #0056b3;
+            border-color: #0056b3;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+        }
+
+    /* CSS değişkenleri */
+    :root {
+        --trello-blue: #0079bf;
+        --trello-dark: #172b4d;
+    }
+
+    .text-trello-dark {
+        color: var(--trello-dark) !important;
+    }
+</style>

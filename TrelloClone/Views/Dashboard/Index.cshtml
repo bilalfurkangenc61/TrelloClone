@@ -1,0 +1,786 @@
+﻿@model List<Team>
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<!-- Hoş Geldin Alanı -->
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="welcome-header mb-4">
+                <div class="d-flex justify-content-between align-items-center flex-wrap">
+                    <div>
+                        <h1 class="h3 fw-bold text-primary mb-1">
+                            <i class="fas fa-home me-2"></i>
+                            Hoş Geldiniz, @User.Identity.Name! 👋
+                        </h1>
+                        <p class="text-muted mb-0">Bugün hangi projeler üzerinde çalışacaksınız?</p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-trello-primary" data-bs-toggle="modal" data-bs-target="#createTeamModal">
+                            <i class="fas fa-plus me-1"></i>
+                            Yeni Takım
+                        </button>
+                        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#createBoardModal">
+                            <i class="fas fa-columns me-1"></i>
+                            Yeni Pano
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hızlı İstatistikler -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card card-trello h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="stat-icon bg-primary bg-opacity-10 text-primary rounded-circle p-3 me-3">
+                            <i class="fas fa-users fa-lg"></i>
+                        </div>
+                        <div>
+                            <h5 class="card-title fw-bold mb-0">@Model.Count</h5>
+                            <p class="card-text text-muted small mb-0">Takımlarım</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card card-trello h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="stat-icon bg-success bg-opacity-10 text-success rounded-circle p-3 me-3">
+                            <i class="fas fa-columns fa-lg"></i>
+                        </div>
+                        <div>
+                            <h5 class="card-title fw-bold mb-0">@Model.SelectMany(t => t.Boards).Count()</h5>
+                            <p class="card-text text-muted small mb-0">Panolarım</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card card-trello h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="stat-icon bg-warning bg-opacity-10 text-warning rounded-circle p-3 me-3">
+                            <i class="fas fa-tasks fa-lg"></i>
+                        </div>
+                        <div>
+                            <h5 class="card-title fw-bold mb-0" id="activeTasksCount">-</h5>
+                            <p class="card-text text-muted small mb-0">Aktif Görevlerim</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card card-trello h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="stat-icon bg-info bg-opacity-10 text-info rounded-circle p-3 me-3">
+                            <i class="fas fa-chart-line fa-lg"></i>
+                        </div>
+                        <div>
+                            <h5 class="card-title fw-bold mb-0" id="completedTasksCount">-</h5>
+                            <p class="card-text text-muted small mb-0">Tamamlananlar</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ana İçerik -->
+    <div class="row">
+        <!-- Sol Taraf - Takımlarım ve Panolarım -->
+        <div class="col-lg-8 mb-4">
+            @if (Model.Any())
+            {
+                <!-- Takımlarım -->
+                <div class="card card-trello mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-users text-primary me-2"></i>
+                            Takımlarım
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            @foreach (var team in Model)
+                            {
+                                <div class="col-md-6">
+                                    <div class="team-card p-3 border rounded hover-lift">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <h6 class="fw-bold mb-0">@team.Name</h6>
+                                            <span class="badge bg-primary">@team.Members.Count üye</span>
+                                        </div>
+                                        @if (!string.IsNullOrEmpty(team.Description))
+                                        {
+                                            <p class="text-muted small mb-2">@team.Description</p>
+                                        }
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-muted">
+                                                @team.Boards.Count pano
+                                            </small>
+                                            <a href="/Team/Details/@team.Id" class="btn btn-outline-primary btn-sm">
+                                                Görüntüle
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Son Panolarım -->
+                <div class="card card-trello">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-columns text-success me-2"></i>
+                            Son Panolarım
+                        </h5>
+                        <a href="/Board" class="text-decoration-none small">Tümünü Gör</a>
+                    </div>
+                    <div class="card-body">
+                        @if (Model.SelectMany(t => t.Boards).Any())
+                        {
+                            <div class="row g-3">
+                                @foreach (var board in Model.SelectMany(t => t.Boards).OrderByDescending(b => b.CreatedAt).Take(6))
+                                {
+                                    <div class="col-md-4">
+                                        <div class="board-card p-3 rounded hover-lift cursor-pointer"
+                                             style="background-color: @board.BackgroundColor; color: white;"
+                                             onclick="window.location.href='/Board/Details/@board.Id'">
+                                            <h6 class="fw-bold mb-1">@board.Name</h6>
+                                            <small class="opacity-75">
+                                                @board.Team.Name
+                                            </small>
+                                            <div class="mt-2">
+                                                <small class="opacity-75">
+                                                    @board.Lists.Count liste
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center py-4">
+                                <i class="fas fa-columns fa-3x text-muted mb-3"></i>
+                                <h6 class="text-muted">Henüz pano oluşturmadınız</h6>
+                                <button class="btn btn-trello-primary" data-bs-toggle="modal" data-bs-target="#createBoardModal">
+                                    <i class="fas fa-plus me-1"></i>
+                                    İlk Panonuzu Oluşturun
+                                </button>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+            else
+            {
+                <!-- İlk Kullanım - Boş Durum -->
+                <div class="card card-trello text-center">
+                    <div class="card-body py-5">
+                        <i class="fas fa-rocket fa-4x text-primary mb-4"></i>
+                        <h4 class="fw-bold mb-3">TrelloClone'a Hoş Geldiniz! 🎉</h4>
+                        <p class="text-muted mb-4">
+                            Proje yönetimi yolculuğunuza başlamak için ilk takımınızı oluşturun
+                            ve panolarınızı organize etmeye başlayın.
+                        </p>
+                        <div class="d-flex justify-content-center gap-3">
+                            <button class="btn btn-trello-primary btn-lg" data-bs-toggle="modal" data-bs-target="#createTeamModal">
+                                <i class="fas fa-users me-2"></i>
+                                İlk Takımımı Oluştur
+                            </button>
+                            <a href="#" class="btn btn-outline-primary btn-lg">
+                                <i class="fas fa-play me-2"></i>
+                                Nasıl Kullanılır?
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Sağ Taraf - Etkinlik Akışı ve Hızlı Eylemler -->
+        <div class="col-lg-4">
+            <!-- Hızlı Eylemler -->
+            <div class="card card-trello mb-4">
+                <div class="card-header bg-white">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-bolt text-warning me-2"></i>
+                        Hızlı Eylemler
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-primary btn-sm text-start" data-bs-toggle="modal" data-bs-target="#createTeamModal">
+                            <i class="fas fa-users me-2"></i>
+                            Yeni Takım Oluştur
+                        </button>
+                        <button class="btn btn-outline-success btn-sm text-start" data-bs-toggle="modal" data-bs-target="#createBoardModal">
+                            <i class="fas fa-columns me-2"></i>
+                            Yeni Pano Oluştur
+                        </button>
+                        <a href="/Team" class="btn btn-outline-info btn-sm text-start">
+                            <i class="fas fa-search me-2"></i>
+                            Takımlara Katıl
+                        </a>
+                        <a href="/Account/Settings" class="btn btn-outline-secondary btn-sm text-start">
+                            <i class="fas fa-cog me-2"></i>
+                            Ayarları Düzenle
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Son Etkinlikler -->
+            <div class="card card-trello">
+                <div class="card-header bg-white">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-history text-info me-2"></i>
+                        Son Etkinlikler
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div id="recentActivities">
+                        <div class="text-center py-3">
+                            <i class="fas fa-clock fa-2x text-muted mb-2"></i>
+                            <p class="text-muted small mb-0">Henüz etkinlik yok</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Takım Oluşturma Modali -->
+<div class="modal fade" id="createTeamModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-users me-2"></i>
+                    Yeni Takım Oluştur
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="createTeamForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="teamName" class="form-label">Takım Adı</label>
+                        <input type="text" class="form-control" id="teamName" placeholder="Örn: Web Geliştirme Takımı" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="teamDescription" class="form-label">Açıklama</label>
+                        <textarea class="form-control" id="teamDescription" rows="3"
+                                  placeholder="Takımınız hakkında kısa bir açıklama..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-trello-primary">
+                        <i class="fas fa-plus me-1"></i>
+                        Takım Oluştur
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Pano Oluşturma Modali -->
+<div class="modal fade" id="createBoardModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-columns me-2"></i>
+                    Yeni Pano Oluştur
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="createBoardForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="boardName" class="form-label">Pano Adı</label>
+                        <input type="text" class="form-control" id="boardName" placeholder="Örn: Website Projesi" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="boardTeam" class="form-label">Takım</label>
+                        <select class="form-select" id="boardTeam" required>
+                            <option value="">Takım Seçin</option>
+                            @foreach (var team in Model)
+                            {
+                                <option value="@team.Id">@team.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="boardDescription" class="form-label">Açıklama</label>
+                        <textarea class="form-control" id="boardDescription" rows="2"
+                                  placeholder="Pano hakkında kısa açıklama..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Arka Plan Rengi</label>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn color-option active" data-color="#0079bf" style="background-color: #0079bf; width: 40px; height: 40px;"></button>
+                            <button type="button" class="btn color-option" data-color="#d29034" style="background-color: #d29034; width: 40px; height: 40px;"></button>
+                            <button type="button" class="btn color-option" data-color="#519839" style="background-color: #519839; width: 40px; height: 40px;"></button>
+                            <button type="button" class="btn color-option" data-color="#b04632" style="background-color: #b04632; width: 40px; height: 40px;"></button>
+                            <button type="button" class="btn color-option" data-color="#89609e" style="background-color: #89609e; width: 40px; height: 40px;"></button>
+                        </div>
+                        <input type="hidden" id="boardColor" value="#0079bf">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-trello-primary">
+                        <i class="fas fa-plus me-1"></i>
+                        Pano Oluştur
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+
+         // Sayfa yüklendiğinde istatistikleri getir
+        document.addEventListener('DOMContentLoaded', function() {
+            loadTaskStats();
+            loadRecentActivities();
+
+            // Her 30 saniyede bir güncelle
+            setInterval(loadTaskStats, 30000);
+            setInterval(loadRecentActivities, 60000);
+        });
+
+        // Görev istatistiklerini yükle
+        function loadTaskStats() {
+            fetch('/Home/GetTaskStats')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Aktif görevleri güncelle
+                        const activeTasksElement = document.getElementById('activeTasksCount');
+                        if (activeTasksElement) {
+                            activeTasksElement.textContent = data.activeTasks;
+                            animateNumber(activeTasksElement, data.activeTasks);
+                        }
+
+                        // Tamamlanan görevleri güncelle
+                        const completedTasksElement = document.getElementById('completedTasksCount');
+                        if (completedTasksElement) {
+                            completedTasksElement.textContent = data.completedTasks;
+                            animateNumber(completedTasksElement, data.completedTasks);
+                        }
+
+                        // Bugün vadesi gelen görevler varsa uyarı göster
+                        if (data.dueTodayTasks > 0) {
+                            showDueTodayNotification(data.dueTodayTasks);
+                        }
+
+                        console.log('İstatistikler güncellendi:', data);
+                    } else {
+                        console.error('İstatistik hatası:', data.message);
+                        // Hata durumunda 0 göster
+                        document.getElementById('activeTasksCount').textContent = '0';
+                        document.getElementById('completedTasksCount').textContent = '0';
+                    }
+                })
+                .catch(error => {
+                    console.error('İstatistik yükleme hatası:', error);
+                    // Hata durumunda - göster
+                    document.getElementById('activeTasksCount').textContent = '-';
+                    document.getElementById('completedTasksCount').textContent = '-';
+                });
+        }
+
+        // Son aktiviteleri yükle
+        function loadRecentActivities() {
+            fetch('/Home/GetRecentActivities')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.activities.length > 0) {
+                        const activitiesContainer = document.getElementById('recentActivities');
+
+                        activitiesContainer.innerHTML = data.activities.map(activity => `
+                            <div class="activity-item mb-3 p-2 border-start border-3 ${activity.type === 'comment' ? 'border-primary' : 'border-success'} bg-light rounded-end">
+                                <div class="d-flex align-items-start">
+                                    <div class="activity-icon me-2">
+                                        <i class="fas ${activity.type === 'comment' ? 'fa-comment' : 'fa-user-plus'}
+                                           ${activity.type === 'comment' ? 'text-primary' : 'text-success'}"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <p class="mb-1 small">${activity.message}</p>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-muted">${activity.timeAgo}</small>
+                                            <a href="/Board/Details/${activity.boardId}" class="btn btn-outline-primary btn-sm" style="font-size: 0.7rem; padding: 0.15rem 0.5rem;">
+                                                ${activity.boardName}
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('');
+
+                        console.log('Aktiviteler güncellendi:', data.activities.length);
+                    } else {
+                        // Aktivite yoksa varsayılan mesajı göster
+                        document.getElementById('recentActivities').innerHTML = `
+                            <div class="text-center py-3">
+                                <i class="fas fa-clock fa-2x text-muted mb-2"></i>
+                                <p class="text-muted small mb-0">Henüz etkinlik yok</p>
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Aktivite yükleme hatası:', error);
+                });
+        }
+
+        // Sayı animasyonu
+        function animateNumber(element, targetNumber) {
+            const startNumber = parseInt(element.textContent) || 0;
+            const duration = 500; // ms
+            const steps = 20;
+            const increment = (targetNumber - startNumber) / steps;
+
+            let currentStep = 0;
+            const timer = setInterval(() => {
+                currentStep++;
+                const currentNumber = Math.round(startNumber + (increment * currentStep));
+                element.textContent = currentNumber;
+
+                if (currentStep >= steps) {
+                    clearInterval(timer);
+                    element.textContent = targetNumber; // Kesin sayıyı göster
+                }
+            }, duration / steps);
+        }
+
+        // Bugün vadesi gelen görevler için bildirim
+        function showDueTodayNotification(count) {
+            // Eğer daha önce gösterilmişse tekrar gösterme
+            if (sessionStorage.getItem('dueTodayShown')) {
+                return;
+            }
+
+            // Toast notification oluştur
+            const toastHtml = `
+                <div class="toast align-items-center text-white bg-warning border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <i class="fas fa-clock me-2"></i>
+                            Bugün vadesi gelen ${count} göreviniz var!
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                </div>
+            `;
+
+            // Toast container oluştur (yoksa)
+            let toastContainer = document.getElementById('toast-container');
+            if (!toastContainer) {
+                toastContainer = document.createElement('div');
+                toastContainer.id = 'toast-container';
+                toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+                toastContainer.style.zIndex = '9999';
+                document.body.appendChild(toastContainer);
+            }
+
+            // Toast'ı ekle
+            toastContainer.innerHTML = toastHtml;
+            const toastElement = toastContainer.querySelector('.toast');
+            const toast = new bootstrap.Toast(toastElement, {
+                autohide: true,
+                delay: 5000
+            });
+
+            toast.show();
+
+            // Bu session'da tekrar gösterme
+            sessionStorage.setItem('dueTodayShown', 'true');
+        }
+
+        // Renk seçimi
+        document.querySelectorAll('.color-option').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.color-option').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                document.getElementById('boardColor').value = this.dataset.color;
+            });
+        });
+
+        // Takım oluşturma formu
+        document.getElementById('createTeamForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const teamName = document.getElementById('teamName').value;
+            const teamDescription = document.getElementById('teamDescription').value;
+
+            if (!teamName.trim()) {
+                alert('Takım adı gereklidir!');
+                return;
+            }
+
+            // Form verilerini hazırla
+            const formData = new FormData();
+            formData.append('Name', teamName);
+            formData.append('Description', teamDescription);
+
+            // AJAX ile Team Controller'a gönder
+            fetch('/Team/Create', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    // Başarılı - Team Details sayfasına yönlendir
+                    return response.text().then(html => {
+                        if (html.includes('<!DOCTYPE')) {
+                            // HTML dönerse (başarılı), sayfayı yenile
+                            window.location.href = '/Team';
+                        } else {
+                            // JSON dönerse işle
+                            return JSON.parse(html);
+                        }
+                    });
+                } else {
+                    throw new Error('Takım oluşturulamadı');
+                }
+            })
+            .then(data => {
+                alert('Takım başarıyla oluşturuldu! 🎉');
+                $('#createTeamModal').modal('hide');
+                // Sayfayı yenile
+                window.location.reload();
+            })
+            .catch(error => {
+                console.error('Hata:', error);
+                alert('Takım oluşturulurken bir hata oluştu.');
+            });
+        });
+
+        // Pano oluşturma formu
+        document.getElementById('createBoardForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const boardName = document.getElementById('boardName').value;
+            const teamId = document.getElementById('boardTeam').value;
+            const description = document.getElementById('boardDescription').value;
+            const color = document.getElementById('boardColor').value;
+
+            if (!boardName.trim()) {
+                alert('Pano adı gereklidir!');
+                return;
+            }
+
+            if (!teamId) {
+                alert('Takım seçimi gereklidir!');
+                return;
+            }
+
+            // URL ile Board/Create sayfasına git
+            const url = `/Board/Create?teamId=${teamId}&name=${encodeURIComponent(boardName)}&description=${encodeURIComponent(description)}`;
+            window.location.href = url;
+        });
+
+        // Hover efektleri
+        document.querySelectorAll('.hover-lift').forEach(el => {
+            el.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-2px)';
+                this.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+            });
+
+            el.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+                this.style.boxShadow = 'none';
+            });
+        });
+
+        // Renk seçimi
+        document.querySelectorAll('.color-option').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.color-option').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                document.getElementById('boardColor').value = this.dataset.color;
+            });
+        });
+
+        // Form submit'leri (şimdilik alert, sonra AJAX yapacağız)
+             // Takım oluşturma formu
+        document.getElementById('createTeamForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const teamName = document.getElementById('teamName').value;
+            const teamDescription = document.getElementById('teamDescription').value;
+
+            if (!teamName.trim()) {
+                alert('Takım adı gereklidir!');
+                return;
+            }
+
+            // Form verilerini hazırla
+            const formData = new FormData();
+            formData.append('Name', teamName);
+            formData.append('Description', teamDescription);
+
+            // AJAX ile Team Controller'a gönder
+            fetch('/Team/Create', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    // Başarılı - Team Details sayfasına yönlendir
+                    return response.text().then(html => {
+                        if (html.includes('<!DOCTYPE')) {
+                            // HTML dönerse (başarılı), sayfayı yenile
+                            window.location.href = '/Team';
+                        } else {
+                            // JSON dönerse işle
+                            return JSON.parse(html);
+                        }
+                    });
+                } else {
+                    throw new Error('Takım oluşturulamadı');
+                }
+            })
+            .then(data => {
+                alert('Takım başarıyla oluşturuldu! 🎉');
+                $('#createTeamModal').modal('hide');
+                // Sayfayı yenile
+                window.location.reload();
+            })
+            .catch(error => {
+                console.error('Hata:', error);
+                alert('Takım oluşturulurken bir hata oluştu.');
+            });
+        });
+
+                // Pano oluşturma formu
+        document.getElementById('createBoardForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const boardName = document.getElementById('boardName').value;
+            const teamId = document.getElementById('boardTeam').value;
+            const description = document.getElementById('boardDescription').value;
+            const color = document.getElementById('boardColor').value;
+
+            if (!boardName.trim()) {
+                alert('Pano adı gereklidir!');
+                return;
+            }
+
+            if (!teamId) {
+                alert('Takım seçimi gereklidir!');
+                return;
+            }
+
+            // URL ile Board/Create sayfasına git
+            const url = `/Board/Create?teamId=${teamId}&name=${encodeURIComponent(boardName)}&description=${encodeURIComponent(description)}`;
+            window.location.href = url;
+        });
+
+        // Hover efektleri
+        document.querySelectorAll('.hover-lift').forEach(el => {
+            el.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-2px)';
+                this.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+            });
+
+            el.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+                this.style.boxShadow = 'none';
+            });
+        });
+    </script>
+}
+
+<style>
+    .welcome-header {
+        background: linear-gradient(135deg, var(--trello-blue-light), var(--trello-white));
+        border-radius: 12px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-icon {
+        width: 60px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .team-card, .board-card {
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+        .team-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .board-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+    .color-option {
+        border: 2px solid transparent;
+        border-radius: 8px;
+    }
+
+        .color-option.active {
+            border-color: var(--trello-text);
+            transform: scale(1.1);
+        }
+
+    .cursor-pointer {
+        cursor: pointer;
+    }
+
+    /* Responsive düzenlemeler */
+    @@media (max-width: 768px) {
+        .welcome-header
+
+    {
+        padding: 1.5rem;
+    }
+
+    .d-flex.gap-2 {
+        flex-direction: column;
+    }
+
+    .btn {
+        width: 100%;
+    }
+
+    }
+</style>

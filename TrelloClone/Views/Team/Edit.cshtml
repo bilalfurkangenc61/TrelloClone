@@ -1,0 +1,65 @@
+﻿@model EditTeamViewModel
+@{
+    ViewData["Title"] = "Takım Düzenle";
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card card-trello">
+                <div class="card-header bg-white">
+                    <h4 class="card-title fw-bold mb-0">
+                        <i class="fas fa-edit text-primary me-2"></i>
+                        Takım Düzenle
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Edit" method="post">
+                        <input asp-for="Id" type="hidden">
+                        <div asp-validation-summary="All" class="alert alert-danger d-none"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="Name" class="form-label">
+                                <i class="fas fa-tag me-1"></i>
+                                Takım Adı
+                            </label>
+                            <input asp-for="Name" class="form-control form-control-lg" required>
+                            <span asp-validation-for="Name" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="Description" class="form-label">
+                                <i class="fas fa-align-left me-1"></i>
+                                Açıklama
+                            </label>
+                            <textarea asp-for="Description" class="form-control" rows="4"></textarea>
+                            <span asp-validation-for="Description" class="text-danger"></span>
+                        </div>
+
+                        <div class="d-flex gap-3">
+                            <button type="submit" class="btn btn-trello-primary btn-lg">
+                                <i class="fas fa-save me-2"></i>
+                                Değişiklikleri Kaydet
+                            </button>
+                            <a href="@Url.Action("Details", new { id = Model.Id })" class="btn btn-outline-secondary btn-lg">
+                                <i class="fas fa-arrow-left me-2"></i>
+                                Geri Dön
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <text>
+                document.querySelector('.alert-danger').classList.remove('d-none');
+            </text>
+        }
+    </script>
+}

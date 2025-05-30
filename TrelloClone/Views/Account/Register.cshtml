@@ -1,0 +1,270 @@
+﻿@model RegisterViewModel
+@{
+    ViewData["Title"] = "Kayıt Ol";
+}
+
+<div class="container-fluid">
+    <div class="row min-vh-100">
+        <!-- Sol taraf - Form -->
+        <div class="col-lg-6 d-flex align-items-center">
+            <div class="w-100 p-4 p-lg-5">
+                <div class="auth-form mx-auto" style="max-width: 400px;">
+                    <!-- Logo ve Başlık -->
+                    <div class="text-center mb-4">
+                        <h1 class="h2 fw-bold text-primary">
+                            <i class="fas fa-trello me-2"></i>
+                            TrelloClone
+                        </h1>
+                        <p class="text-muted">Hesabınızı oluşturun ve başlayın</p>
+                    </div>
+
+                    <!-- Kayıt Formu -->
+                    <form asp-action="Register" method="post" class="needs-validation" novalidate>
+                        <div asp-validation-summary="All" class="alert alert-danger d-none"></div>
+
+                        <!-- Ad -->
+                        <div class="mb-3">
+                            <label asp-for="FirstName" class="form-label">
+                                <i class="fas fa-user me-1"></i>
+                                Ad
+                            </label>
+                            <input asp-for="FirstName" class="form-control form-control-lg"
+                                   placeholder="Adınızı girin" required>
+                            <span asp-validation-for="FirstName" class="text-danger"></span>
+                        </div>
+
+                        <!-- Soyad -->
+                        <div class="mb-3">
+                            <label asp-for="LastName" class="form-label">
+                                <i class="fas fa-user me-1"></i>
+                                Soyad
+                            </label>
+                            <input asp-for="LastName" class="form-control form-control-lg"
+                                   placeholder="Soyadınızı girin" required>
+                            <span asp-validation-for="LastName" class="text-danger"></span>
+                        </div>
+
+                        <!-- E-posta -->
+                        <div class="mb-3">
+                            <label asp-for="Email" class="form-label">
+                                <i class="fas fa-envelope me-1"></i>
+                                E-posta
+                            </label>
+                            <input asp-for="Email" type="email" class="form-control form-control-lg"
+                                   placeholder="ornek@email.com" required>
+                            <span asp-validation-for="Email" class="text-danger"></span>
+                        </div>
+
+                        <!-- Şifre -->
+                        <div class="mb-3">
+                            <label asp-for="Password" class="form-label">
+                                <i class="fas fa-lock me-1"></i>
+                                Şifre
+                            </label>
+                            <div class="input-group">
+                                <input asp-for="Password" type="password" class="form-control form-control-lg"
+                                       placeholder="En az 6 karakter" required id="password">
+                                <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <span asp-validation-for="Password" class="text-danger"></span>
+                            <div class="form-text">
+                                <small>En az 6 karakter, bir rakam içermelidir</small>
+                            </div>
+                        </div>
+
+                        <!-- Şifre Tekrar -->
+                        <div class="mb-4">
+                            <label asp-for="ConfirmPassword" class="form-label">
+                                <i class="fas fa-lock me-1"></i>
+                                Şifre Tekrar
+                            </label>
+                            <div class="input-group">
+                                <input asp-for="ConfirmPassword" type="password" class="form-control form-control-lg"
+                                       placeholder="Şifrenizi tekrar girin" required id="confirmPassword">
+                                <button class="btn btn-outline-secondary" type="button" id="toggleConfirmPassword">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                        </div>
+
+                        <!-- Kullanım Koşulları -->
+                        <div class="mb-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="acceptTerms" required>
+                                <label class="form-check-label" for="acceptTerms">
+                                    <a href="#" class="text-decoration-none">Kullanım Koşulları</a>'nı
+                                    ve <a href="#" class="text-decoration-none">Gizlilik Politikası</a>'nı
+                                    okudum ve kabul ediyorum.
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Kayıt Butonu -->
+                        <button type="submit" class="btn btn-trello-primary btn-lg w-100 mb-3">
+                            <i class="fas fa-user-plus me-2"></i>
+                            Hesap Oluştur
+                        </button>
+
+                        <!-- Giriş Yap Linki -->
+                        <div class="text-center">
+                            <p class="mb-0">
+                                Zaten hesabınız var mı?
+                                <a href="@Url.Action("Login", "Account")" class="text-decoration-none fw-semibold">
+                                    Giriş Yapın
+                                </a>
+                            </p>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sağ taraf - Görsel/Tanıtım -->
+        <div class="col-lg-6 d-none d-lg-flex align-items-center justify-content-center"
+             style="background: linear-gradient(135deg, var(--trello-blue), var(--trello-blue-dark));">
+            <div class="text-center text-white p-5">
+                <div class="mb-4">
+                    <i class="fas fa-rocket fa-5x mb-4"></i>
+                    <h2 class="display-6 fw-bold">Projelerinizi Yönetin</h2>
+                    <p class="lead">
+                        TrelloClone ile takımınızla daha verimli çalışın,
+                        görevleri takip edin ve projelerinizi başarıyla tamamlayın.
+                    </p>
+                </div>
+
+                <!-- Özellikler -->
+                <div class="row g-3 mt-4">
+                    <div class="col-12">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle fa-lg me-3"></i>
+                            <span>Sürükle-bırak ile kolay görev yönetimi</span>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle fa-lg me-3"></i>
+                            <span>Gerçek zamanlı takım işbirliği</span>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle fa-lg me-3"></i>
+                            <span>Sprint yönetimi ve raporlama</span>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle fa-lg me-3"></i>
+                            <span>Mobil uyumlu tasarım</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Şifre göster/gizle
+        document.getElementById('togglePassword').addEventListener('click', function() {
+            const password = document.getElementById('password');
+            const icon = this.querySelector('i');
+
+            if (password.type === 'password') {
+                password.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                password.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        });
+
+        document.getElementById('toggleConfirmPassword').addEventListener('click', function() {
+            const confirmPassword = document.getElementById('confirmPassword');
+            const icon = this.querySelector('i');
+
+            if (confirmPassword.type === 'password') {
+                confirmPassword.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                confirmPassword.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        });
+
+        // Form doğrulama
+        (function() {
+            'use strict';
+            window.addEventListener('load', function() {
+                var forms = document.getElementsByClassName('needs-validation');
+                var validation = Array.prototype.filter.call(forms, function(form) {
+                    form.addEventListener('submit', function(event) {
+                        if (form.checkValidity() === false) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                        }
+                        form.classList.add('was-validated');
+                    }, false);
+                });
+            }, false);
+        })();
+
+        // Validation summary'yi göster/gizle
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <text>
+                document.querySelector('.alert-danger').classList.remove('d-none');
+            </text>
+        }
+    </script>
+}
+
+<style>
+    .auth-form {
+        animation: fadeInUp 0.6s ease-out;
+    }
+
+    @@keyframes fadeInUp {
+        from
+
+    {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    }
+
+    .form-control:focus {
+        border-color: var(--trello-blue);
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 191, 0.25);
+    }
+
+    .btn-trello-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    /* Responsive düzenlemeler */
+    @@media (max-width: 991px) {
+        .min-vh-100
+
+    {
+        min-height: auto;
+        padding: 40px 0;
+    }
+
+    }
+</style>
