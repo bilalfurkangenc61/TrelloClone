@@ -1,0 +1,573 @@
+﻿@model EditSprintViewModel
+@{
+    ViewData["Title"] = "Sprint Düzenle";
+}
+
+<!-- Sprint Düzenleme Sayfası -->
+<div class="container-fluid py-4">
+    <!-- Sayfa Başlığı -->
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <!-- Breadcrumb -->
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="@Url.Action("Index", "Board")">
+                            <i class="fas fa-columns me-1"></i>
+                            Panolarım
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="@Url.Action("Details", "Board", new { id = Model.BoardId })">
+                            @Model.BoardName
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="@Url.Action("Index", "Sprint", new { boardId = Model.BoardId })">
+                            Sprint Yönetimi
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active">Sprint Düzenle</li>
+                </ol>
+            </nav>
+
+            <!-- Sayfa Başlığı -->
+            <div class="d-flex align-items-center mb-4">
+                <div class="me-3">
+                    <div class="icon-circle bg-primary">
+                        <i class="fas fa-edit text-white"></i>
+                    </div>
+                </div>
+                <div>
+                    <h2 class="fw-bold text-trello-dark mb-1">Sprint Düzenle</h2>
+                    <p class="text-muted mb-0">@Model.BoardName panosundaki sprint'i güncelleyin</p>
+                </div>
+            </div>
+
+            <!-- Sprint Düzenleme Formu -->
+            <div class="card card-trello">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-rocket me-2 text-primary"></i>
+                        Sprint Bilgileri
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Edit" asp-controller="Sprint" method="post" id="editSprintForm">
+                        @Html.AntiForgeryToken()
+
+                        <!-- Hidden Fields -->
+                        <input type="hidden" asp-for="Id" />
+                        <input type="hidden" asp-for="BoardId" />
+                        <input type="hidden" asp-for="BoardName" />
+
+                        <!-- Hata Mesajları -->
+                        <div asp-validation-summary="All" class="alert alert-danger" style="display: none;"></div>
+
+                        <!-- Sprint Adı -->
+                        <div class="mb-4">
+                            <label asp-for="Name" class="form-label fw-medium">
+                                <i class="fas fa-tag me-1 text-primary"></i>
+                                Sprint Adı <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="Name"
+                                   class="form-control form-control-lg"
+                                   placeholder="Örn: Sprint 1, Geliştirme Fazı 1"
+                                   maxlength="200" />
+                            <span asp-validation-for="Name" class="text-danger"></span>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Sprint'inizi tanımlayan açıklayıcı bir ad verin (Maksimum 200 karakter)
+                            </div>
+                        </div>
+
+                        <!-- Sprint Açıklaması -->
+                        <div class="mb-4">
+                            <label asp-for="Description" class="form-label fw-medium">
+                                <i class="fas fa-align-left me-1 text-primary"></i>
+                                Açıklama
+                            </label>
+                            <textarea asp-for="Description"
+                                      class="form-control"
+                                      rows="4"
+                                      placeholder="Sprint'in hedefleri, kapsamı ve detayları hakkında bilgi verin..."
+                                      maxlength="1000"></textarea>
+                            <span asp-validation-for="Description" class="text-danger"></span>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Sprint'in hedeflerini ve kapsamını açıklayın (İsteğe bağlı, maksimum 1000 karakter)
+                            </div>
+                        </div>
+
+                        <!-- Sprint Tarihleri -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label asp-for="StartDate" class="form-label fw-medium">
+                                    <i class="fas fa-calendar-alt me-1 text-success"></i>
+                                    Başlangıç Tarihi <span class="text-danger">*</span>
+                                </label>
+                                <input asp-for="StartDate"
+                                       type="date"
+                                       class="form-control"
+                                       id="startDate" />
+                                <span asp-validation-for="StartDate" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="EndDate" class="form-label fw-medium">
+                                    <i class="fas fa-calendar-alt me-1 text-danger"></i>
+                                    Bitiş Tarihi <span class="text-danger">*</span>
+                                </label>
+                                <input asp-for="EndDate"
+                                       type="date"
+                                       class="form-control"
+                                       id="endDate" />
+                                <span asp-validation-for="EndDate" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <!-- Sprint Süresi Göstergesi -->
+                        <div class="mb-4">
+                            <div class="card bg-light border-0">
+                                <div class="card-body py-3">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-6">
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-hourglass-half text-primary me-2"></i>
+                                                <span class="fw-medium">Sprint Süresi:</span>
+                                                <span id="sprintDuration" class="ms-2 badge bg-primary">-- gün</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6 mt-2 mt-md-0">
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-lightbulb text-warning me-2"></i>
+                                                <small class="text-muted">Önerilen süre: 1-4 hafta (7-28 gün)</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sprint Durumu -->
+                        <div class="mb-4">
+                            <label asp-for="Status" class="form-label fw-medium">
+                                <i class="fas fa-flag me-1 text-primary"></i>
+                                Sprint Durumu
+                            </label>
+                            <select asp-for="Status" class="form-select" id="statusSelect">
+                                <option value="0">🕒 Planlama - Sprint henüz başlamadı</option>
+                                <option value="1">▶️ Aktif - Sprint devam ediyor</option>
+                                <option value="2">✅ Tamamlandı - Sprint tamamlandı</option>
+                                <option value="3">❌ İptal Edildi - Sprint iptal edildi</option>
+                            </select>
+                            <span asp-validation-for="Status" class="text-danger"></span>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                <span id="statusInfo">Sprint'in mevcut durumunu seçin</span>
+                            </div>
+                        </div>
+
+                        <!-- Uyarı Mesajları -->
+                        <div id="statusWarnings"></div>
+
+                        <!-- Form Butonları -->
+                        <div class="d-flex flex-column flex-md-row gap-3 justify-content-between align-items-center pt-4 border-top">
+                            <div class="d-flex gap-2">
+                                <a href="@Url.Action("Index", "Sprint", new { boardId = Model.BoardId })"
+                                   class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left me-2"></i>
+                                    Sprint Listesine Dön
+                                </a>
+                                <a href="@Url.Action("Details", "Sprint", new { id = Model.Id })"
+                                   class="btn btn-outline-info">
+                                    <i class="fas fa-eye me-2"></i>
+                                    Sprint Detayları
+                                </a>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button type="button"
+                                        class="btn btn-outline-warning"
+                                        onclick="resetForm()">
+                                    <i class="fas fa-undo me-2"></i>
+                                    Sıfırla
+                                </button>
+                                <button type="submit"
+                                        class="btn btn-trello-primary"
+                                        id="saveButton">
+                                    <i class="fas fa-save me-2"></i>
+                                    Sprint'i Güncelle
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Sprint İpuçları -->
+            <div class="card card-trello mt-4">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-lightbulb me-2 text-warning"></i>
+                        Sprint Düzenleme İpuçları
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="d-flex">
+                                <i class="fas fa-clock text-info me-3 mt-1"></i>
+                                <div>
+                                    <h6 class="fw-bold mb-1">Tarih Değişiklikleri</h6>
+                                    <p class="text-muted mb-0 small">
+                                        Aktif sprint'lerin tarihleri değiştirilemez. Sprint'i durdurup tekrar başlatmanız gerekir.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex">
+                                <i class="fas fa-users text-success me-3 mt-1"></i>
+                                <div>
+                                    <h6 class="fw-bold mb-1">Takım Bilgilendirme</h6>
+                                    <p class="text-muted mb-0 small">
+                                        Sprint değişikliklerini takım üyelerinizle paylaşmayı unutmayın.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex">
+                                <i class="fas fa-target text-primary me-3 mt-1"></i>
+                                <div>
+                                    <h6 class="fw-bold mb-1">Sprint Hedefleri</h6>
+                                    <p class="text-muted mb-0 small">
+                                        Sprint açıklamasında net hedefler belirleyin ve ölçülebilir kriterler koyun.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex">
+                                <i class="fas fa-chart-line text-warning me-3 mt-1"></i>
+                                <div>
+                                    <h6 class="fw-bold mb-1">İlerleme Takibi</h6>
+                                    <p class="text-muted mb-0 small">
+                                        Sprint süresince günlük ilerleme toplantıları yapmayı ihmal etmeyin.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Sayfa yüklendiğinde sprint süresini hesapla
+            calculateSprintDuration();
+            updateStatusInfo();
+
+            // Tarih değişikliklerini dinle
+            $('#startDate, #endDate').on('change', function() {
+                calculateSprintDuration();
+                validateDates();
+            });
+
+            // Durum değişikliklerini dinle
+            $('#statusSelect').on('change', function() {
+                updateStatusInfo();
+                showStatusWarnings();
+            });
+
+            // Form submit edilmeden önce kontrol
+            $('#editSprintForm').on('submit', function(e) {
+                if (!validateForm()) {
+                    e.preventDefault();
+                    return false;
+                }
+
+                // Submit butonunu devre dışı bırak
+                $('#saveButton').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Güncelleniyor...');
+            });
+        });
+
+        // Sprint süresini hesapla
+        function calculateSprintDuration() {
+            const startDate = new Date($('#startDate').val());
+            const endDate = new Date($('#endDate').val());
+
+            if (startDate && endDate && endDate > startDate) {
+                const timeDiff = endDate.getTime() - startDate.getTime();
+                const dayDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+                let badgeClass = 'bg-primary';
+                let icon = '';
+
+                if (dayDiff < 7) {
+                    badgeClass = 'bg-warning';
+                    icon = '⚠️ ';
+                } else if (dayDiff > 28) {
+                    badgeClass = 'bg-danger';
+                    icon = '⚠️ ';
+                } else {
+                    icon = '✅ ';
+                }
+
+                $('#sprintDuration').removeClass('bg-primary bg-warning bg-danger')
+                                   .addClass(badgeClass)
+                                   .text(icon + dayDiff + ' gün');
+            } else {
+                $('#sprintDuration').removeClass('bg-warning bg-danger')
+                                   .addClass('bg-secondary')
+                                   .text('-- gün');
+            }
+        }
+
+        // Tarihleri validate et
+        function validateDates() {
+            const startDate = new Date($('#startDate').val());
+            const endDate = new Date($('#endDate').val());
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            // Geçmiş tarih kontrolü
+            if (startDate < today) {
+                showWarning('Başlangıç tarihi geçmiş bir tarih olamaz.', 'warning');
+            }
+
+            // Bitiş tarihi kontrolü
+            if (endDate <= startDate) {
+                showWarning('Bitiş tarihi başlangıç tarihinden sonra olmalıdır.', 'danger');
+            }
+        }
+
+        // Durum bilgisini güncelle
+        function updateStatusInfo() {
+            const status = $('#statusSelect').val();
+            const statusInfos = {
+                '0': 'Sprint henüz başlamadı, kartlar atanabilir ve planlamalar yapılabilir',
+                '1': 'Sprint aktif durumda, kartlar üzerinde çalışılıyor',
+                '2': 'Sprint tamamlandı, rapor görüntülenebilir',
+                '3': 'Sprint iptal edildi, kartlar başka sprint\'lere atanabilir'
+            };
+
+            $('#statusInfo').text(statusInfos[status] || 'Sprint durumu seçin');
+        }
+
+        // Durum uyarılarını göster
+        function showStatusWarnings() {
+            const status = $('#statusSelect').val();
+            let warningHtml = '';
+
+            if (status === '1') { // Aktif
+                warningHtml = `
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Dikkat!</strong> Aktif sprint'lerin tarihleri değiştirilemez.
+                    </div>
+                `;
+            } else if (status === '2') { // Tamamlandı
+                warningHtml = `
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Bilgi:</strong> Tamamlanmış sprint'lere yeni kart atanamaz.
+                    </div>
+                `;
+            } else if (status === '3') { // İptal edildi
+                warningHtml = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-ban me-2"></i>
+                        <strong>Uyarı!</strong> İptal edilmiş sprint'ler tekrar aktif hale getirilemez.
+                    </div>
+                `;
+            }
+
+            $('#statusWarnings').html(warningHtml);
+        }
+
+        // Form validasyonu
+        function validateForm() {
+            let isValid = true;
+
+            // Sprint adı kontrolü
+            const name = $('#Name').val().trim();
+            if (!name) {
+                showWarning('Sprint adı zorunludur.', 'danger');
+                isValid = false;
+            } else if (name.length > 200) {
+                showWarning('Sprint adı en fazla 200 karakter olabilir.', 'danger');
+                isValid = false;
+            }
+
+            // Açıklama kontrolü
+            const description = $('#Description').val();
+            if (description && description.length > 1000) {
+                showWarning('Açıklama en fazla 1000 karakter olabilir.', 'danger');
+                isValid = false;
+            }
+
+            // Tarih kontrolü
+            const startDate = new Date($('#startDate').val());
+            const endDate = new Date($('#endDate').val());
+
+            if (!startDate || !endDate) {
+                showWarning('Başlangıç ve bitiş tarihleri zorunludur.', 'danger');
+                isValid = false;
+            } else if (endDate <= startDate) {
+                showWarning('Bitiş tarihi başlangıç tarihinden sonra olmalıdır.', 'danger');
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        // Formu sıfırla
+        function resetForm() {
+            if (confirm('Tüm değişiklikleri kaybedeceksiniz. Devam etmek istediğinizden emin misiniz?')) {
+                location.reload();
+            }
+        }
+
+        // Uyarı göster
+        function showWarning(message, type = 'warning') {
+            // Önceki uyarıları temizle
+            $('.custom-warning').remove();
+
+            const warningHtml = `
+                <div class="alert alert-${type} alert-dismissible fade show custom-warning" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+
+            $('#editSprintForm').prepend(warningHtml);
+
+            // 5 saniye sonra otomatik kapat
+            setTimeout(() => {
+                $('.custom-warning').alert('close');
+            }, 5000);
+        }
+    </script>
+}
+
+<style>
+    .icon-circle {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #0079bf;
+        box-shadow: 0 0 0 0.2rem rgba(0, 121, 191, 0.25);
+    }
+
+    .card-trello {
+        border: none;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+    }
+
+        .card-trello:hover {
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+
+    .btn-trello-primary {
+        background-color: #0079bf;
+        border-color: #0079bf;
+        color: white;
+        transition: all 0.3s ease;
+    }
+
+        .btn-trello-primary:hover {
+            background-color: #005a8b;
+            border-color: #005a8b;
+            transform: translateY(-1px);
+        }
+
+    .text-trello-dark {
+        color: #172b4d !important;
+    }
+
+    .form-text {
+        font-size: 0.875rem;
+    }
+
+    /* Responsive ayarları */
+    @@media (max-width: 768px) {
+        .container-fluid
+
+    {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .d-flex.gap-3 {
+        flex-direction: column;
+    }
+
+    .d-flex.gap-2 {
+        flex-direction: column;
+    }
+
+    .btn {
+        width: 100%;
+    }
+
+    }
+
+    /* Sprint süre göstergesi renkleri */
+    .badge.bg-warning {
+        background-color: #ffc107 !important;
+        color: #000;
+    }
+
+    .badge.bg-danger {
+        background-color: #dc3545 !important;
+    }
+
+    .badge.bg-primary {
+        background-color: #0079bf !important;
+    }
+
+    /* Form animasyonları */
+    .form-control,
+    .form-select {
+        transition: all 0.3s ease;
+    }
+
+        .form-control:focus,
+        .form-select:focus {
+            transform: translateY(-1px);
+        }
+
+    /* Alert animasyonları */
+    .alert {
+        animation: slideIn 0.3s ease-out;
+    }
+
+    @@keyframes slideIn {
+        from
+
+    {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    }
+</style>

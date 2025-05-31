@@ -4,6 +4,7 @@ using TrelloClone.Data;
 using TrelloClone.Models;
 using TrelloClone.Hubs; // BoardHub için gerekli
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Veritabaný baðlantýsýný ekle
@@ -32,6 +33,17 @@ builder.Services.AddControllersWithViews();
 // SignalR servisini ekle (gerçek zamanlý güncellemeler için)
 builder.Services.AddSignalR();
 
+// Session desteði ekle
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+
+
+
 var app = builder.Build();
 
 // HTTP request pipeline yapýlandýrmasý
@@ -43,8 +55,10 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
 app.UseRouting();
+
+// Session'ý aktif et
+app.UseSession();
 
 app.UseAuthentication();
 app.UseAuthorization();
@@ -70,7 +84,7 @@ app.MapControllerRoute(
     pattern: "Card/GetComments/{cardId:int}",
     defaults: new { controller = "Card", action = "GetComments" });
 
-// SignalR Hub'ýný map et - BU SATIRI EKLEYÝN
+// SignalR Hub'ýný map et
 app.MapHub<BoardHub>("/boardHub");
 
 app.Run();

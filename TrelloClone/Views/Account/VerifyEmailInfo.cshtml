@@ -1,0 +1,181 @@
+﻿@{
+    ViewData["Title"] = "Email Doğrulama Gerekli";
+}
+
+<!-- Email Doğrulama Bilgi Sayfası -->
+<div class="container-fluid">
+    <div class="row min-vh-100 justify-content-center align-items-center">
+        <div class="col-lg-6 col-md-8">
+            <div class="card card-trello shadow-lg">
+                <div class="card-header text-center bg-warning text-dark">
+                    <h4 class="card-title mb-0">
+                        <i class="fas fa-envelope me-2"></i>
+                        Email Doğrulama Gerekli
+                    </h4>
+                </div>
+
+                <div class="card-body text-center py-5">
+                    <div class="info-animation mb-4">
+                        <i class="fas fa-envelope-open fa-5x text-warning"></i>
+                    </div>
+
+                    <h3 class="text-warning fw-bold mb-3">Neredeyse tamamlandı!</h3>
+
+                    @if (TempData["Info"] != null)
+                    {
+                        <div class="alert alert-info mb-4">
+                            <i class="fas fa-info-circle me-2"></i>
+                            @TempData["Info"]
+                        </div>
+                    }
+
+                    <p class="lead mb-4">
+                        Hesabınızı aktifleştirmek için email kutunuzu kontrol edin ve
+                        doğrulama linkine tıklayın.
+                    </p>
+
+                    <!-- Adımlar -->
+                    <div class="steps-container mb-4">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <div class="step-item">
+                                    <div class="step-icon">
+                                        <i class="fas fa-envelope-open fa-2x text-primary"></i>
+                                    </div>
+                                    <h6 class="fw-bold mt-2">1. Email'inizi Açın</h6>
+                                    <small class="text-muted">Email kutunuzu kontrol edin</small>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <div class="step-item">
+                                    <div class="step-icon">
+                                        <i class="fas fa-mouse-pointer fa-2x text-success"></i>
+                                    </div>
+                                    <h6 class="fw-bold mt-2">2. Linke Tıklayın</h6>
+                                    <small class="text-muted">Doğrulama linkine tıklayın</small>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <div class="step-item">
+                                    <div class="step-icon">
+                                        <i class="fas fa-check-circle fa-2x text-info"></i>
+                                    </div>
+                                    <h6 class="fw-bold mt-2">3. Giriş Yapın</h6>
+                                    <small class="text-muted">Hesabınıza giriş yapın</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Uyarı Kutusu -->
+                    <div class="alert alert-warning">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Önemli Bilgiler
+                        </h6>
+                        <ul class="mb-0 text-start">
+                            <li>Doğrulama linki 24 saat geçerlidir</li>
+                            <li>Spam klasörünü de kontrol edin</li>
+                            <li>Email gelmiyorsa yeni link talep edebilirsiniz</li>
+                        </ul>
+                    </div>
+
+                    <!-- Butonlar -->
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                        <a href="@Url.Action("ResendVerification", "Account")" class="btn btn-primary btn-lg">
+                            <i class="fas fa-paper-plane me-2"></i>
+                            Yeni Doğrulama Linki Gönder
+                        </a>
+                        <a href="@Url.Action("Login", "Account")" class="btn btn-outline-secondary btn-lg">
+                            <i class="fas fa-sign-in-alt me-2"></i>
+                            Giriş Sayfasına Dön
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Yardım -->
+                <div class="card-footer text-center bg-light">
+                    <small class="text-muted">
+                        <i class="fas fa-question-circle me-1"></i>
+                        Sorun mu yaşıyorsunuz?
+                        <a href="#" class="text-decoration-none">Destek ekibiyle iletişime geçin</a>
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card-trello {
+        border: none;
+        border-radius: 15px;
+        overflow: hidden;
+    }
+
+    .info-animation {
+        animation: pulse 2s ease-in-out infinite;
+    }
+
+    @@keyframes pulse {
+        0% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.05);
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    .steps-container {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 15px;
+        padding: 2rem 1rem;
+        margin: 2rem 0;
+    }
+
+    .step-item {
+        text-align: center;
+        padding: 1rem;
+    }
+
+    .step-icon {
+        margin-bottom: 1rem;
+    }
+
+    .btn {
+        border-radius: 25px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+    .alert {
+        border-radius: 10px;
+    }
+
+    @@media (max-width: 768px) {
+        .steps-container {
+            padding: 1rem 0.5rem;
+        }
+
+        .step-item {
+            padding: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .step-icon i {
+            font-size: 1.5rem !important;
+        }
+    }
+</style>

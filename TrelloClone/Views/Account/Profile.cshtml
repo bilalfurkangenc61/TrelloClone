@@ -1,0 +1,104 @@
+﻿@model UserProfileViewModel
+@{
+    ViewData["Title"] = "Profil Bilgileri";
+}
+
+<!-- Profil Sayfası -->
+<div class="container-fluid py-4">
+    <div class="row">
+        <!-- Sol Sidebar -->
+        <div class="col-lg-3 col-md-4">
+            <div class="card card-trello mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-user-circle me-2"></i>
+                        Hesap Yönetimi
+                    </h6>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="@Url.Action("Settings")" class="list-group-item list-group-item-action">
+                        <i class="fas fa-cog me-2"></i>
+                        Genel Ayarlar
+                    </a>
+                    <a href="@Url.Action("ChangePassword")" class="list-group-item list-group-item-action">
+                        <i class="fas fa-lock me-2"></i>
+                        Şifre Değiştir
+                    </a>
+                    <a href="@Url.Action("Profile")" class="list-group-item list-group-item-action active">
+                        <i class="fas fa-user me-2"></i>
+                        Profil Bilgileri
+                    </a>
+                </div>
+            </div>
+
+            <!-- Hızlı İşlemler -->
+            <div class="card card-trello">
+                <div class="card-header bg-info text-white">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-bolt me-2"></i>
+                        Hızlı İşlemler
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="@Url.Action("Settings")" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-edit me-2"></i>
+                            Profil Düzenle
+                        </a>
+                        <a href="@Url.Action("ChangePassword")" class="btn btn-outline-warning btn-sm">
+                            <i class="fas fa-key me-2"></i>
+                            Şifre Değiştir
+                        </a>
+                        <a href="@Url.Action("Index", "Dashboard")" class="btn btn-outline-success btn-sm">
+                            <i class="fas fa-home me-2"></i>
+                            Ana Sayfa
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ana İçerik -->
+        <div class="col-lg-9 col-md-8">
+            <!-- Sayfa Başlığı -->
+            <div class="d-flex align-items-center mb-4">
+                <div class="me-3">
+                    <div class="icon-circle bg-info">
+                        <i class="fas fa-user text-white"></i>
+                    </div>
+                </div>
+                <div>
+                    <h2 class="fw-bold text-trello-dark mb-1">Profil Bilgileri</h2>
+                    <p class="text-muted mb-0">Hesap bilgilerinizi görüntüleyin</p>
+                </div>
+            </div>
+
+            <!-- Profil Kartı -->
+            <div class="card card-trello mb-4">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-id-card me-2 text-primary"></i>
+                            Kişisel Bilgiler
+                        </h5>
+                        <a href="@Url.Action("Settings")" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-edit me-1"></i>
+                            Düzenle
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Profil Avatarı -->
+                        <div class="col-md-3 text-center mb-4 mb-md-0">
+                            <div class="profile-avatar-large mb-3">
+                                <i class="fas fa-user-circle fa-6x text-primary"></i>
+                            </div>
+                            <button class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-camera me-1"></i>
+                                Fotoğraf Değiştir
+                            </button>
+                            <p class="text-muted small mt-2 mb-0">
+                                Maksimum 2MB, JPG/PNG
+                            </p>
+                        </div>
